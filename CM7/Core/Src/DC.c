@@ -155,7 +155,7 @@ void GetVelocity(void)
    v_BL=delta_distance_BL_cm/(T_velocity/1000.0);
    v_BR=delta_distance_BR_cm/(T_velocity/1000.0);
 
-   if(v_BL<0.05 && v_BR<0.05)
+   if(fabs(v_BL)<0.000001 && fabs(v_BR)<0.000001)
    {
 	   MoveFlag=0;
 	   Velocity_PID_Reset();

@@ -80,7 +80,7 @@ void BL_Velocity_PID_Control(void)
 
     //当误差小于临界误差时，更新误差积分项
     if(MoveFlag == 1) {
-    	if(BL_Velocity_PID.Error0<BL_Velocity_PID.ErrorThresh)
+    	if(fabs(BL_Velocity_PID.Error0)<BL_Velocity_PID.ErrorThresh)
             BL_Velocity_PID.ErrorInt += BL_Velocity_PID.Error0; // 小车运动时累加误差
     }
 

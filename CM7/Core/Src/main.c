@@ -322,6 +322,7 @@ Error_Handler();
   HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"hi1\r\n",strlen("hi1\r\n"),HAL_MAX_DELAY);
   uint8_t lock=0;
   uint8_t Movelock=0;
+  TestStage='V';
   //点击测试
  //无线模块初始�???????????????
   // 1. �???????????????测NRF24L01是否存在
@@ -341,9 +342,9 @@ Error_Handler();
 	//SetVelocity(-0.3,-0.3);//基准速度启动
  // }
   //速度pid测试
-  SetVelocity(-0.2,-0.2);//启动电机
- // Set_TargetVelocity(-20,-20);//设置pid目标速度20
 
+  Set_TargetVelocity(-20,-20);//设置pid目标速度20
+  SetVelocity(-0.1,-0.1);//启动电机
 
   /*延时测试
 	uint32_t CYCLES_PER_US= SystemCoreClock / 1000000;
@@ -1466,10 +1467,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   if(htim->Instance == TIM5)
   {
 
-
-
-
-
       //速度pid调控周期�????????????????????20ms
       if(MoveFlag==1)
       {
@@ -1477,8 +1474,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		  if(Cnt_1ms%T_velocity==0)
 		  {
 			  GetVelocity();//更新左右轮转�???????
-			  //Velocity_Update();//速度PID控制
-			 // Velocity_PID_UpdateFlag=1;
+			  Velocity_Update();//速度PID控制
+			  Velocity_PID_UpdateFlag=1;
 			  /*占空�???????-电机转�?�关系测�???????
 			  v_cnt++;
 			  GetVelocity();
@@ -1553,7 +1550,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
 void clip(float* val,float min,float max)//限幅函数
 {
-	if(val>0)
+	if(*val>0)
 	{
 		*val=(*val>min)?*val:min;
 		*val=(*val<max)?*val:max;
