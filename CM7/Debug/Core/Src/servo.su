@@ -1,0 +1,3 @@
+../Core/Src/servo.c:11:7:tanA	24	static
+../Core/Src/servo.c:18:10:Angle2CCR	24	static
+../Core/Src/servo.c:26:6:SetAngle	16	static

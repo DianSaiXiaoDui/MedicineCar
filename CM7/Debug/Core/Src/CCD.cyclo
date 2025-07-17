@@ -1,0 +1,7 @@
+../Core/Src/CCD.c:3:6:Linear_CCD_Read	2
+../Core/Src/CCD.c:33:10:ADC_GetValue	2
+../Core/Src/CCD.c:50:6:CCD_Data_Process	12
+../Core/Src/CCD.c:110:6:CCD_Read	3
+../Core/Src/CCD.c:168:6:Linear_CCD_Flush	2
+../Core/Src/CCD.c:203:6:Dly_us	2
+../Core/Src/CCD.c:210:6:Dly	2

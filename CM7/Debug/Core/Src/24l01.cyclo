@@ -1,0 +1,16 @@
+../Core/Src/24l01.c:29:6:Set_RxCallback	1
+../Core/Src/24l01.c:33:9:NRF_GetRxFlag	1
+../Core/Src/24l01.c:37:6:NRF_ClearRxFlag	1
+../Core/Src/24l01.c:42:6:HAL_GPIO_EXTI_Callback	2
+../Core/Src/24l01.c:50:6:NRF24L01_IRQHandler	3
+../Core/Src/24l01.c:74:6:NRF24L01_Init	1
+../Core/Src/24l01.c:80:9:NRF24L01_Check	3
+../Core/Src/24l01.c:112:9:NRF24L01_Write_Reg	1
+../Core/Src/24l01.c:131:9:NRF24L01_Read_Reg	1
+../Core/Src/24l01.c:153:9:NRF24L01_Read_Buf	2
+../Core/Src/24l01.c:179:9:NRF24L01_Write_Buf	2
+../Core/Src/24l01.c:204:9:NRF24L01_TxPacket	4
+../Core/Src/24l01.c:250:9:NRF24L01_RxPacket	2
+../Core/Src/24l01.c:276:6:NRF24L01_RX_Mode	1
+../Core/Src/24l01.c:308:6:NRF24L01_TX_Mode	1
+../Core/Src/24l01.c:328:9:NRF24L01_SendString	3
