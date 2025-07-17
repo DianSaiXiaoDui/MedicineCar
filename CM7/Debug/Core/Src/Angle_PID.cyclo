@@ -1,3 +1,3 @@
-../Core/Src/Angle_PID.c:12:6:Angle_PID_Init	1
-../Core/Src/Angle_PID.c:35:6:Angle_PID_Control	7
-../Core/Src/Angle_PID.c:73:6:Angle_PID_Reset	1
+../Core/Src/Angle_PID.c:11:6:Angle_PID_Init	1
+../Core/Src/Angle_PID.c:34:6:Angle_PID_Control	5
+../Core/Src/Angle_PID.c:80:6:Angle_PID_Reset	1

@@ -27,9 +27,9 @@ void SetVelocity(float BL_ratio,float BR_ratio);
 //获取速度,计算一个测速周期内的车后轮速度和整体速度，更新移动距离
 void GetVelocity(void);
 
-//以一定速度原地转弯一定度数（堵塞式）
+//以一定速度原地转弯一定时间（堵塞式）
 //dir=0 向左 dir=1 向右,angle：角度，time:希望的时间；
-void Turn(uint8_t dir,float angle,float time);
+void Turn(uint8_t dir,float time);
 
 void DC_Stop(void);//电机停止转动
 

@@ -11,19 +11,24 @@
 #include "CCD.h"
 
 //转向pid结构体定义
-typedef struct {
-  float Kp;//比例系数
-  float Ki;
-  float Kd;//微分系数
-  int16_t Error0;//当前误差
-  int16_t Error1;//上一误差
-  float ErrorInt;//累计误差
-  float I;//积分项
-  float AD;//微分项
-  float IThresh;//积分限幅
-  float OutputThresh;//输出限幅
-  float Output;//输出
-  uint8_t Reset;
+typedef struct{
+	    float Kp;               // 比例系数
+	    float Ki;               // 积分系数
+	    float Kd;               // 微分系数
+	    float P;                // 比例项
+	    float I;                // 积分项
+	    float D;                // 微分项
+	    float IThresh;          // 积分限幅
+	    float Error0;           // 当前横向误差
+	    float Error1;           // 上一横向误差
+	    float ErrorThresh;      // 抗积分饱和临界误差
+	    float ErrorInt;         // 累计横向误差
+	    float CurX;      // 当前横向坐标
+	    float TargetX;   // 目标横向坐标
+	    float deltaVelocity;    // pid输出量:两轮的差速
+	    float OutputThreshH;    // pid输出限幅（上界）
+	    float OutputThreshL;    // pid输出限幅（下界）
+	    uint8_t Reset;        	//切换目标标志
 }Angle_PID_Struct;
 
 extern Angle_PID_Struct Angle_PID;//转向pid结构体

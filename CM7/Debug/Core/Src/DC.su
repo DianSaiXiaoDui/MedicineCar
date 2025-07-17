@@ -3,5 +3,5 @@
 ../Core/Src/DC.c:63:6:BR_SetVelocity	24	static
 ../Core/Src/DC.c:95:6:SetVelocity	16	static
 ../Core/Src/DC.c:133:6:GetVelocity	40	static
-../Core/Src/DC.c:175:6:Turn	40	static
-../Core/Src/DC.c:194:6:DC_Stop	8	static
+../Core/Src/DC.c:173:6:Turn	16	static
+../Core/Src/DC.c:192:6:DC_Stop	8	static

@@ -170,23 +170,21 @@ void GetVelocity(void)
     }
 }
 
-//dir=0 向左 dir=1 向右,angle：角度，time:希望的时间；
-//v=107.75ratio-0.54
-void Turn(uint8_t dir,float angle,float time)
+void Turn(uint8_t dir,float time)
 {
-	float w=angle/time*PI/180.0;//旋转角速度
+	/*float w=angle/time*PI/180.0;//旋转角速度
 	float v=K/2*w;//旋转线速度
-	float ratio=(0.54+v)/107.75;
+	float ratio=(0.54+v)/107.75;*/
 	//顺时针
 	if(dir>0)
 	{
-		SetVelocity(ratio,-ratio);
+		SetVelocity(0.1,-0.1);
 		HAL_Delay((uint32_t)time*1000);
 	}
 	//逆时针
 	else if(dir<0)
 	{
-		SetVelocity(-ratio,ratio);
+		SetVelocity(-0.1,0.1);
 		HAL_Delay((uint32_t)time*1000);
 	}
 }
