@@ -227,6 +227,7 @@ volatile uint8_t CCD_ReadFlag=0;//主程序查看CCD值标�????????
 volatile uint8_t CCD_ReadCnt;//主程序查看CCD值计数器
 volatile uint8_t CCD_ReadPeriod;//主程序查看CCD周期
 float actual_Delay=0;
+uint8_t lock=0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -335,7 +336,7 @@ Error_Handler();
 //串口测试
   HAL_UART_Receive_IT(&hlpuart1,&PiRxChar,1);//使能接收中断
   HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"hi1\r\n",strlen("hi1\r\n"),HAL_MAX_DELAY);
-  uint8_t lock=0;
+
   uint8_t Movelock=0;
   TestStage='V';
   //点击测试
@@ -424,6 +425,7 @@ Error_Handler();
 							Pos='A';
 							lock=0;
 							StraightStopFlag=0;
+							DC_Stop();
 						}
 					}
 				}
@@ -443,6 +445,7 @@ Error_Handler();
 							Dir='r';
 							lock=0;
 							TurnStopFlag=0;
+							DC_Stop();
 						}
 					}
 				}
@@ -459,6 +462,7 @@ Error_Handler();
 							Pos='A';
 							lock=0;
 							StraightStopFlag=0;
+							DC_Stop();
 						}
 					}
 				}
@@ -478,6 +482,7 @@ Error_Handler();
 							Dir='l';
 							lock=0;
 							TurnStopFlag=0;
+							DC_Stop();
 						}
 					}
 				}
@@ -494,6 +499,7 @@ Error_Handler();
 							Pos='1';
 							lock=0;
 							StraightStopFlag=0;
+							DC_Stop();
 						}
 					}
 				}
@@ -510,6 +516,7 @@ Error_Handler();
 							Dir='s';
 							lock=0;
 							TurnStopFlag=0;
+							DC_Stop();
 						}
 					}
 				}
@@ -526,7 +533,7 @@ Error_Handler();
 							Pos='1';
 							lock=0;
 							StraightStopFlag=0;
-
+							DC_Stop();
 						}
 					}
 				}
@@ -1561,21 +1568,21 @@ Error_Handler();
           Velocity_Update();//速度PID控制
 
     }
-	 if( TurnStopFlag==1)
+	/* if( TurnStopFlag==1)
 	 {
 		//  TurnCnt=0;
 		  DC_Stop();
 		  TurnFlag=0;
 		  //TurnStopFlag=0;
-	 }
+	 }*/
 
-	 if(StraightStopFlag==1)
+	/* if(StraightStopFlag==1)
 	 {
 		DC_Stop();
 		TotalDistance=0;
 		DistanceFlag=0;
 		//StraightStopFlag=0;
-	 }
+	 }*/
 
 
 	//snprintf(VelocityStr,sizeof(VelocityStr),"%.2f,%.2f\r\n",v_BR,BR_Velocity_PID.TargetVelocity);//串口发�?�，绘制当前左轮速度和目标�?�度波形
@@ -1709,6 +1716,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			  if(TurnCnt>=TurnPeriod)
 			  {
 			      TurnStopFlag=1;
+			      TurnFlag=0;
 			      TurnCnt=0;
 			  }
 		  }

@@ -190,6 +190,9 @@ void GetVelocity(void)
     	if(TotalDistance>=TargetDistance)
     	{
     		StraightStopFlag=1;
+    		DistanceFlag=0;
+    		TotalDistance=0;
+
     	}
     }
 }

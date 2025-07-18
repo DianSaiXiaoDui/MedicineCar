@@ -3,7 +3,7 @@
 ../Core/Src/DC.c:69:6:BR_SetVelocity	24	static
 ../Core/Src/DC.c:105:6:SetVelocity	16	static
 ../Core/Src/DC.c:147:6:GetVelocity	40	static
-../Core/Src/DC.c:197:6:DC_Turn	16	static
-../Core/Src/DC.c:231:6:DC_Forward	16	static
-../Core/Src/DC.c:242:6:DC_Backward	16	static
-../Core/Src/DC.c:254:6:DC_Stop	8	static
+../Core/Src/DC.c:200:6:DC_Turn	16	static
+../Core/Src/DC.c:234:6:DC_Forward	16	static
+../Core/Src/DC.c:245:6:DC_Backward	16	static
+../Core/Src/DC.c:257:6:DC_Stop	8	static
