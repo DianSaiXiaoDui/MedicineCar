@@ -56,9 +56,11 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-float nintyDegreeTime = 1;
-float halfCircleTime = 2;
-
+enum Place {start,pharmacy,ward,cross1,cross2};
+enum Place place = pharmacy;
+int ActionLog[20] = {}; // 0代表前进, 1代表左转, -1代表右转
+int ActionLogTop = -1;
+uint8_t actionLock = 0;
 float v_BL;//左后轮�?�度 cm/s
 float v_BR;//右后轮�?�度 cm/s
 float v_C;//车整体�?�度 cm/s
@@ -67,9 +69,15 @@ uint16_t T_velocity=20;//测�?�周�?????????????????????????(PID调控周�
 uint16_t T_location=100;
 uint8_t distance_flag=0;//�?????????????????????????始累积距离标�?????????????????????????
 uint8_t MoveFlag=0;
-uint8_t Mode=0;//0-待机模式�????????????????????1-单车模式�????????????????????2-双车模式1 3-双车模式2
+uint8_t toWard = 1;
+uint8_t crossed_detected = 0;
+uint8_t black_detected = 0;
+uint8_t medicine_detected = 0;
+char target = ' ';
 char Dir='n';//方向
 char Pos='0';//位置
+char action[20] = "stop";
+char digitDetected[20]= "";
 extern Angle_PID_Struct Angle_PID;//转向pid结构�?????????????????
 extern Location_PID_Struct Location_PID;
 extern BL_Velocity_PID_Struct BL_Velocity_PID;
@@ -102,21 +110,6 @@ uint8_t Touch_pannel_receive = 0;
 uint8_t Touch_pannel_data_receive_start = 0;
 uint8_t RxBuffer1[16];
 
-//接收树莓派字符串
-char PiRxStrBuf[128];//接收字符串缓冲区
-
-//树莓派识别数�???????????????????
-uint8_t SingleNum=0;
-uint8_t LeftNum=0;
-uint8_t RightNum=0;
-
-
-uint8_t PiRxCharIdx=0;//接收字符位置索引
-uint8_t PiRxChar;//接收的字�???????????????????
-uint8_t PiRxStrFlag;//接收字符串标�???????????????????
-
-//药房�???????????????????
-uint8_t House=0;
 
 //距离变量
 uint8_t distance1=85;//OA
@@ -142,50 +135,7 @@ uint16_t freq=10;//无线通信频率
 
 //调试阶段
 char TestStage;
-//PID调控�???????????????????启标�???????????????????
-/*
-uint8_t AnglePID_Flag=1;
-uint8_t VelocityPID_Flag=1;
-uint8_t LocationPID_Flag=1;
-*/
 
-//单纯测试转向�???????????????????
-/*
-uint8_t AnglePID_Flag=1;
-uint8_t VelocityPID_Flag=0;
-uint8_t LocationPID_Flag=0;
-char TestStage='A';
-*/
-
-//单纯测试速度�???????????????????
-/*
-uint8_t AnglePID_Flag=0;
-uint8_t VelocityPID_Flag=1;
-uint8_t LocationPID_Flag=0;
-char TestStage='V';
-*/
-
-//测试速度�???????????????????+转向�???????????????????
-/*
-uint8_t AnglePID_Flag=1;
-uint8_t VelocityPID_Flag=1;
-uint8_t LocationPID_Flag=0;
-char TestStage='N';
-*/
-
-//测试位置+速度�???????????????????+转向�???????????????????
-/*
-uint8_t AnglePID_Flag=1;
-uint8_t VelocityPID_Flag=1;
-uint8_t LocationPID_Flag=0;
-char TestStage='M';
-
-*/
-
-//无线发�??/接收缓冲�?????????????????
-
-//编码器测�???????????????
-//TestStage='E';
 uint32_t v_cnt=0;//测�?�计数器
 float v_BL_Avg;//左轮平均速度
 float v_BR_Avg;//右轮平均速度
@@ -200,8 +150,15 @@ char VelocityStr[20]={};
 uint8_t DCStopFlag=0;
 uint8_t TurnFlag=0;
 uint32_t TurnCnt=0;
+uint32_t WaitCnt = 0;
 uint32_t TurnPeriod=0;
+uint32_t WaitPeriod = 10;
 uint8_t TurnStopFlag=0;
+uint8_t StopFlag = 0;
+uint8_t WaitFlag = 0; // 给与一定数字识别时间
+uint8_t OpenFlag = 0; // 给与一定开环往前走
+uint8_t OpenDis = 10;
+uint8_t LoopStart = 0; // 是否是一次新的开环走+旋转
 //uint32_t TurnNinetyPeriod=650;
 //uint32_t TurnBackPeriod=1100;
 
@@ -219,13 +176,6 @@ uint8_t ReceiveHelloFlag=0;
 //串口�????????
 uint8_t Velocity_Plot_Indicate=0;
 
-//CCD
-volatile uint16_t CCD_ADV[128];//CCD 128个像素�??
-volatile uint8_t CCD_Cnt=0;//CCD曝光时间计数�????????
-volatile uint8_t CCD_Period=10;//CCD曝光时间（ms�????????
-volatile uint8_t CCD_ReadFlag=0;//主程序查看CCD值标�????????
-volatile uint8_t CCD_ReadCnt;//主程序查看CCD值计数器
-volatile uint8_t CCD_ReadPeriod;//主程序查看CCD周期
 float actual_Delay=0;
 /* USER CODE END PV */
 
@@ -236,6 +186,9 @@ static void MPU_Config(void);
 /* USER CODE BEGIN PFP */
 void MoveTrack1(void);//运动轨迹1：A-O-B
 void MoveTrack2(void);//运动轨迹2：A-O-C
+uint8_t OpenForward();
+uint8_t OpenTurn(uint8_t, uint8_t);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -338,38 +291,6 @@ Error_Handler();
   uint8_t lock=0;
   uint8_t Movelock=0;
   TestStage='V';
-  //点击测试
- //无线模块初始�????????????????
-  // 1. �????????????????测NRF24L01是否存在
-  //while(NRF24L01_Check() != 0) {}
- //SetVelocity(0.1,0.1);
-  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_SET);
-  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
-  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_SET);
-  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-
-  // 2. 初始化NRF24L01并设置接收回�????????????????
-  //Set_RxCallback(myRxCallback);
-  //NRF24L01_Init();  // 初始化并启用接收中断
-  //转向环pid测试
-  //if(TestStage=='A')
-  //{
-	//SetVelocity(-0.3,-0.3);//基准速度启动
- // }
-  //速度pid测试
-
-  //Set_TargetVelocity(-20,-20);//设置pid目标速度20
-  //SetVelocity(-0.1,-0.1);//启动电机
-
-  /*延时测试
-	uint32_t CYCLES_PER_US= SystemCoreClock / 1000000;
-	uint32_t start = DWT->CYCCNT;
-    DWT_Delay_us(100);
-   actual_Delay=(float)(DWT->CYCCNT - start) / CYCLES_PER_US;  // 返回实际延时
-	char delay_str[32];
-	snprintf(delay_str, sizeof(delay_str), "delay:%.2f", actual_Delay);
-	HAL_UART_Transmit(&hlpuart1,delay_str,strlen(delay_str),HAL_MAX_DELAY);
-*/
 
 
   //使能串口2中断
@@ -387,25 +308,139 @@ Error_Handler();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  if (!crossed_detected)
+		  actionLock = 0;
+	  //转换状态机
+	  switch(place)
+	  {
+	  	  case start:
+	  		  if (target != ' ')
+	  		  {
+	  			  place = pharmacy;
+	  		  }
+	  		  break;
 
-	  /*if(TestStage=='U')//串口通讯测试
-	  {
-	  if(ReceiveHelloFlag==1)
-	  {
-		  HAL_UART_Transmit(&hlpuart1,"hi5\r\n",strlen("hi5\r\n"),HAL_MAX_DELAY);
-		  ReceiveHelloFlag=0;
+	  	  case pharmacy:
+	  		  if (cross_detected )
+	  		  {
+	  			  if (target == '1' || target == '2')
+	  			  {
+	  					  place = cross1;
+	  			  }
+	  			  else
+	  			  {
+	  				  if (strchr(digitDetected, target))
+	  				  {
+	  					  place = cross1;
+	  				  }
+//	  				  else if (strlen(digitDetected) == 4  && strchr(digitDetected, target))
+//	  				  {
+//	  					  place = cross2;
+//	  				  }
+	  			  }
+	  		  }
+	  		  break;
+
+	  	  case cross1:
+	  		  if(black_detected)
+	  		  {
+	  			  if(toWard)
+	  			  {
+	  				  place = ward;
+	  			  }
+	  			  else
+	  			  {
+	  				  place = pharmacy;
+	  			  }
+	  		  }
+	  		  break;
+	  	  case cross2:
+	  		  if (strlen(digitDetected) == 2  && strchr(digitDetected, target))
+	  		  {
+	  			  place = cross1;
+	  		  }
+	  		  break;
+	  	  case ward:
+	  		  if (cross_detected)
+	  		  {
+	  			  place = cross1;
+	  		  }
+	  		  break;
+	  	  default:
 	  }
-	  }*/
-	  //查看CCD
 
+	  //执行状态机
+	  switch(place)
+	  {
+	  	  case pharmacy:
+	  		  if (!toWard)
+	  		  {
+	  			  if (!StopFlag)
+	  			  {
+	  				DC_Stop();
+	  				StopFlag = 1;
+	  			  }
+	  		  }
+	  		  else
+	  		  {
+	  			  if (!crossed_detected) {
+	  				  DC_Forward(10, 0);
+	  			  }
+	  			  else {
+	  				  WaitFlag = 1;
 
+	  				  if(WaitCnt <= WaitPeriod) DC_Stop();
+	  				  else {
+	  					  if (!actionLock)
+	  						  ActionLog[++ActionLogTop] = 0;
+	  					  actionLock = 1;
+	  					  WaitFlag = 0;
+	  					  WaitCnt = 0;
+	  					  DC_Forward(10, 0);
+	  				  }
+	  			  }
+	  		  }
+	  		  break;
+	  	  case ward:
+	  		  if (medicine_detected)
+	  		  {
+	  			  if (!OpenFlag)
+	  				DC_Forward(OpenDis, 0);
+	  			  OpenFlag = 1;
+	  		  }
+	  		  else if (!toWard)
+	  			  DC_Forward(10, 0);
+	  		  else
+	  		  {
+	  			  OpenFlag = 0;
+	  			  if (!lock && toward)
+	  			  {
+	  			  	  DC_Turn(1,180);
+	  			  	  lock = 1;
+	  			  }
+				if(TurnStopFlag==1)
+				{
+					toWard = 0;
+					lock = 0;
+					TurnStopFlag = 0;
+				}
+	  		  }
+	  		  break;
+	  	  case cross1: // 开环走， 旋转， 然后巡线forward, 直到看到十字，重新开始开环走
+			  if (OpenForward())
+			  {
+				  if (OpenTurn(dir, 90))
+				  {
+					  DC_Forward(10, 0);
+					  if(cross_detected)
+						  LoopStart = 1;
 
-	/*  if(Velocity_PID_UpdateFlag==1)
-   {
-		  Velocity_PID_UpdateFlag=0;
-		  snprintf(VelocityStr,sizeof(VelocityStr),"%.2f,%.2f\r\n",v_BR,BR_Velocity_PID.TargetVelocity);//串口发�?�，绘制当前左轮速度和目标�?�度波形
-		  HAL_UART_Transmit(&hlpuart1,VelocityStr,strlen(VelocityStr),HAL_MAX_DELAY);
-   }*/
+				  }
+			  }
+			  break;
+
+	  }
+
 	  if(TestStage=='Z')
 	  {
 	  switch(Pos)
@@ -1373,81 +1408,7 @@ Error_Handler();
 	   }
 	   */
    }
-	   /*树莓派命令串口响�???????????????????*/
-	   	if(PiRxStrFlag==1)
-	   	{
-	   			uint8_t BL_SetVelocity=0;//通过串口命令设置的左轮目标�?�度
-	   			uint8_t BR_SetVelocity=0;//通过串口命令设置的右轮目标�?�度
-	   			uint8_t Kp=0;//通过串口命令设置的kp
-	   			uint8_t Ki=0;//通过串口命令设置的Ki
-	   			uint8_t Kd=0;//通过串口命令设置的Kd
-	   			//识别单个数字
-	   			if(sscanf((const char *)&PiRxStrBuf,"Recognize One Number:%d",SingleNum)==1)
-	   			{
-	   				House=SingleNum;
-	   			}
 
-	   			//识别两个数字
-	   			else if(sscanf((const char *)&PiRxStrBuf,"Recognize Two Numbers Left:%d,Right:%d",LeftNum,RightNum)==2)
-	   			{
-
-	   			}
-
-	   			//接收到检测到药物的命令后，小车开始运�???????????????????
-	   			else if(strcmp(&PiRxStrBuf,"Detect Medicine On")==0)
-	   			{
-	   				Medicine_Flag=1;
-	   			}
-
-	   			else if(strcmp(&PiRxStrBuf,"Detect Medicine Off")==0)
-	   			{
-	   				 Medicine_Flag=2;
-	   			}
-	   			else if(strcmp(&PiRxStrBuf,"hi4")==0)
-	   			{
-	   				 ReceiveHelloFlag=1;
-	   			}
-	   			else if(sscanf(&PiRxStrBuf,"SetBL V %f",BL_SetVelocity)==0)//设置左轮目标速度
-	   			{
-	   				Set_BL_TargetVelocity(BL_SetVelocity);
-	   				BL_Velocity_PID_Reset();
-	   			}
-	   			else if(sscanf(&PiRxStrBuf,"SetBR V %f",BR_SetVelocity)==0)//设置右轮目标速度
-	   			{
-	   				Set_BR_TargetVelocity(BR_SetVelocity);
-	   				BR_Velocity_PID_Reset();
-	   			}
-	   			else if(sscanf(&PiRxStrBuf,"SetBL Kp %f",Kp)==0)//设置左轮Kp
-	   			{
-	   				Set_BL_Kp(Kp);
-	   			}
-	   			else if(sscanf(&PiRxStrBuf,"SetBL Ki %f",Ki)==0)//设置左轮Ki
-	   			{
-	   				Set_BL_Ki(Ki);
-	   			}
-	   			else if(sscanf(&PiRxStrBuf,"SetBL Kd %f",Kd)==0)//设置左轮Kd
-	   			{
-	   				Set_BL_Kd(Kd);
-	   			}
-	   			else if(sscanf(&PiRxStrBuf,"SetBR Kp %f",Kp)==0)//设置右轮Kp
-	   			{
-	   				Set_BR_Kp(Kp);
-	   			}
-	   			else if(sscanf(&PiRxStrBuf,"SetBR Ki %f",Ki)==0)//设置右轮Ki
-	   			{
-	   				Set_BR_Ki(Ki);
-	   			}
-	   			else if(sscanf(&PiRxStrBuf,"SetBR Kd %f",Kd)==0)//设置右轮Kd
-	   			{
-	   				Set_BR_Kd(Kd);
-	   			}
-	   			else if(strcmp(&PiRxStrBuf,"Stop")==0)//车辆停转
-	   			{
-	   				DC_Stop();
-	   			}
-	   			PiRxStrFlag=0;
-	   		}
-	  }
 
    /*串口屏命令响�???????????????????*/
    	if( Touch_pannel_receive_completed ==1)
@@ -1488,20 +1449,7 @@ Error_Handler();
 				  break;
 			//车停�????????
 			   case 0x13:
-				   //MoveFlag=0;
-				   //VelocityStopFlag=0;
-				   /*Velocity_PID_Reset();
-				   HAL_TIM_PWM_Stop(&htim2,TIM_CHANNEL_1);
-				   HAL_TIM_PWM_Stop(&htim2,TIM_CHANNEL_3);
-				   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_RESET);
-				   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
-				   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_RESET);
-				   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-				   v_BL=0;
-				   v_BR=0;*/
 				   DC_Stop();
-				   //Set_TargetVelocity(0,0);
-				  // DCStopFlag=1;
 				   Touch_pannel_Uart2_RxBuffer[1] = 0x0;
 				  break;
 		  //拖动滑钮，调整pid目标速度
@@ -1715,6 +1663,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			  if(TurnCnt>=TurnPeriod)
 			      TurnStopFlag=1;
 		  }
+		  if(WaitFlag)
+		  {
+			  WaitCnt++;
+		  }
       }
 
 
@@ -1807,6 +1759,61 @@ void Velocity_Plot(void)
 
 }
 
+uint8_t OpenForward()
+{
+	static int complete = 0; // 返回是否完成， 以构成动作链
+	static int Flag = 0; // 单次执行
+
+	if (complete) return 1;
+
+	if (LoopStart)
+	{
+		complete = 0;
+		Flag = 0;
+		LoopStart = 0;
+	}
+
+	if (!Flag && !complete)
+	{
+		DC_Forward(OpenDis - 5, 0);
+		Flag = 1;
+	}
+	if (StraightStopFlag)
+	{
+		complete = 1;
+		Flag = 0;
+		LoopStart = 1;
+	}
+	return complete;
+}
+
+uint8_t OpenTurn(uint8_t dir, uint8_t angle)
+{
+	static int complete = 0; // 返回是否完成， 以构成动作链
+	static int Flag = 0; // 单次执行
+
+	if (complete) return 1;
+
+	if (LoopStart)
+	{
+		complete = 0;
+		Flag = 0;
+		LoopStart = 0;
+	}
+
+	if (!Flag && !complete)
+	{
+		DC_Turn(dir, angle);
+		Flag = 1;
+	}
+	if (TurnStopFlag)
+	{
+		complete = 1;
+		Flag = 0;
+		LoopStart = 1;
+	}
+	return complete;
+}
 
 
 /* USER CODE END 4 */
