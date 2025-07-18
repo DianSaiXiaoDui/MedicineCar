@@ -408,132 +408,134 @@ Error_Handler();
    }*/
 	  if(TestStage=='Z')
 	  {
-	  switch(Pos)
-	  {
-	    case '0':
-	    	if(Dir=='n')//起点出发
-	    	{
-	    		if(!lock)
-	    		{
-	    		  DC_Forward(90,0);
-	    		  lock=1;
-	    		}
-	    		else{
-					if(StraightStopFlag==1)
+		  switch(Pos)
+		  {
+			case '0':
+				if(Dir=='n')//起点出发
+				{
+					if(!lock)
 					{
-						Pos='A';
-						lock=0;
-						StraightStopFlag=0;
+					  DC_Forward(90,0);
+					  lock=1;
 					}
-	    		}
-	    	}
-	        break;
-
-	    case '1':
-	    	if(Dir=='l')//掉头
-	    	{
-	    		if(!lock)
-	    		{
-	    		  DC_Turn(1,180);
-	    		  lock=1;
-	    		}
-	    		else{
-					if(TurnStopFlag==1)
-					{
-						Dir='l';
-						lock=0;
-						TurnStopFlag=0;
-					}
-	    		}
-	    	}
-	    	else if(Dir=='r')//直走40cm
-	    	{
-	    		if(!lock)
-	    		{
-	    		  DC_Forward(40,0);
-	    		  lock=1;
-	    		}
-	    		else{
-					if(StraightStopFlag==1)
-					{
-						Pos='A';
-						lock=0;
-						StraightStopFlag=0;
-					}
-	    		}
-	    	}
-	        break;
-
-	    case 'A':
-	    	if(Dir=='n')//路口左转
-	    	{
-	    		if(!lock)
-	    		{
-	    		  DC_Turn(-1,90);
-	    		  lock=1;
-	    		}
-	    		else{
-					if(TurnStopFlag==1)
-					{
-						Dir='l';
-						lock=0;
-						TurnStopFlag=0;
-					}
-	    		}
-	    	}
-	    	else if(Dir=='l')//直走40cm
-	    	{
-	    		if(!lock)
-	    	    {
-				  DC_Forward(40,0);
-				  lock=1;
-				}
-				else{
-					if(StraightStopFlag==1)
-					{
-						Pos='1';
-						lock=0;
-						StraightStopFlag=0;
+					else{
+						if(StraightStopFlag==1)
+						{
+							Pos='A';
+							lock=0;
+							StraightStopFlag=0;
+						}
 					}
 				}
-	    	}
-	    	else if(Dir=='r')//右转
-	    	{
-	    		if(!lock)
-	    		{
-	    		  DC_Turn(1,90);
-	    		  lock=1;
-	    		}
-	    		else{
-					if(TurnStopFlag==1)
-					{
-						Dir='l';
-						lock=0;
-						TurnStopFlag=0;
-					}
-	    		}
-	    	}
-	    	else if(Dir=='s')//直走90cm
-	    	{
-	    		if(!lock)
-	    	    {
-				  DC_Forward(90,0);
-				  lock=1;
-				}
-				else{
-					if(StraightStopFlag==1)
-					{
-						Pos='1';
-						lock=0;
-						StraightStopFlag=0;
+				break;
 
+			case '1':
+				if(Dir=='l')//掉头
+				{
+					if(!lock)
+					{
+					  DC_Turn(1,180);
+					  lock=1;
+					}
+					else{
+						if(TurnStopFlag==1)
+						{
+							Dir='r';
+							lock=0;
+							TurnStopFlag=0;
+						}
 					}
 				}
-	    	}
-	        break;
+				else if(Dir=='r')//直走40cm
+				{
+					if(!lock)
+					{
+					  DC_Forward(40,0);
+					  lock=1;
+					}
+					else{
+						if(StraightStopFlag==1)
+						{
+							Pos='A';
+							lock=0;
+							StraightStopFlag=0;
+						}
+					}
+				}
+				break;
 
+			case 'A':
+				if(Dir=='n')//路口左转
+				{
+					if(!lock)
+					{
+					  DC_Turn(-1,90);
+					  lock=1;
+					}
+					else{
+						if(TurnStopFlag==1)
+						{
+							Dir='l';
+							lock=0;
+							TurnStopFlag=0;
+						}
+					}
+				}
+				else if(Dir=='l')//直走40cm
+				{
+					if(!lock)
+					{
+					  DC_Forward(40,0);
+					  lock=1;
+					}
+					else{
+						if(StraightStopFlag==1)
+						{
+							Pos='1';
+							lock=0;
+							StraightStopFlag=0;
+						}
+					}
+				}
+				else if(Dir=='r')//右转
+				{
+					if(!lock)
+					{
+					  DC_Turn(1,90);
+					  lock=1;
+					}
+					else{
+						if(TurnStopFlag==1)
+						{
+							Dir='s';
+							lock=0;
+							TurnStopFlag=0;
+						}
+					}
+				}
+				else if(Dir=='s')//直走90cm
+				{
+					if(!lock)
+					{
+					  DC_Forward(90,0);
+					  lock=1;
+					}
+					else{
+						if(StraightStopFlag==1)
+						{
+							Pos='1';
+							lock=0;
+							StraightStopFlag=0;
 
-	  }
+						}
+					}
+				}
+				break;
+
+			default:
+				break;
+
+		   }
 	  }
 	/*地图(数字1~8代表病房位置�???????????????????0是药房，字母代表交叉处，（字母）表示数字识别�???????????????????)
 	 *   7                         8
@@ -556,6 +558,7 @@ Error_Handler();
 	 *               0
 	 *
 	 * */
+/*
    if(TestStage=='0')
    {
 	   if(House!=0)
@@ -1361,7 +1364,7 @@ Error_Handler();
 
 		}
 
-       /*
+
          if(MoveFlag==1 && Movelock==0)
 	   {
 		   SetVelocity(0.1,0.1);//起始低�??
@@ -1371,8 +1374,9 @@ Error_Handler();
 	   {
 		   Movelock=0;
 	   }
-	   */
-   }
+
+   }*/
+
 	   /*树莓派命令串口响�???????????????????*/
 	   	if(PiRxStrFlag==1)
 	   	{
@@ -1447,7 +1451,7 @@ Error_Handler();
 	   			}
 	   			PiRxStrFlag=0;
 	   		}
-	  }
+
 
    /*串口屏命令响�???????????????????*/
    	if( Touch_pannel_receive_completed ==1)
@@ -1522,17 +1526,17 @@ Error_Handler();
 				   break;
 			//车左�?
 			   case 0x17:
-				   Turn(-1,90);
+				   DC_Turn(-1,90);
 				   Touch_pannel_Uart2_RxBuffer[1] = 0x0;
 				   break;
 			//车右�?
 			   case 0x18:
-				   Turn(1,90);
+				   DC_Turn(1,90);
 				   Touch_pannel_Uart2_RxBuffer[1] = 0x0;
 				   break;
 			//车掉�?
 			   case 0x19:
-				   Turn(1,180);
+				   DC_Turn(1,180);
 				   Touch_pannel_Uart2_RxBuffer[1] = 0x0;
 				   break;
 
@@ -1559,7 +1563,7 @@ Error_Handler();
     }
 	 if( TurnStopFlag==1)
 	 {
-		  TurnCnt=0;
+		//  TurnCnt=0;
 		  DC_Stop();
 		  TurnFlag=0;
 		  //TurnStopFlag=0;
@@ -1576,25 +1580,15 @@ Error_Handler();
 
 	//snprintf(VelocityStr,sizeof(VelocityStr),"%.2f,%.2f\r\n",v_BR,BR_Velocity_PID.TargetVelocity);//串口发�?�，绘制当前左轮速度和目标�?�度波形
 	//HAL_UART_Transmit(&hlpuart1,VelocityStr,strlen(VelocityStr),HAL_MAX_DELAY);
+
+
+
+
+
   }
-
-  //速度很小时关停电�?
-  /*if(fabs(v_BL)<0.01 && fabs(v_BR)<0.01 && VelocityStopFlag==1)
-  {
-	   MoveFlag=0;
-	   VelocityStopFlag=0;
-	   Velocity_PID_Reset();
-	   HAL_TIM_PWM_Stop(&htim2,TIM_CHANNEL_1);
-	   HAL_TIM_PWM_Stop(&htim2,TIM_CHANNEL_3);
-	   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
-	   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-  }*/
-
-
-
   /* USER CODE END 3 */
-}
 
+}
 /**
   * @brief System Clock Configuration
   * @retval None
@@ -1709,11 +1703,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			  //Velocity_PID.TargetVelocity=Location_PID.Output;
 		  }
 
-		  if(TurnFlag==1)
+		  if(TurnFlag==1 )
 		  {
 			  TurnCnt++;
 			  if(TurnCnt>=TurnPeriod)
+			  {
 			      TurnStopFlag=1;
+			      TurnCnt=0;
+			  }
 		  }
       }
 
