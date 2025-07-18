@@ -110,7 +110,10 @@ void MX_USART2_UART_Init()  //Touch Pannel interface init
   /* Enable the UART RX FIFO threshold interrupt */
   __HAL_UART_ENABLE_IT(&huart2, UART_IT_RXFT);
   /* Put UART peripheral in reception process */
+
+
 }
+
 
 void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
 {

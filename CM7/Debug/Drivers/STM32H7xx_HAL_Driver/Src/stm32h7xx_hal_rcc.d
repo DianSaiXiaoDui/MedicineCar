@@ -1,5 +1,5 @@
 Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rcc.o: \
- C:/Users/ydx/OneDrive/桌面/electronic\ design\ contest/MedicineCar/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rcc.c \
+ D:/Desktop/Desktop2/stm32cube_workspace/SmartCar/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rcc.c \
  ../../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal.h \
  ../Core/Inc/stm32h7xx_hal_conf.h \
  ../../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_rcc.h \

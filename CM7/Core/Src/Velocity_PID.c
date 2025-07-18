@@ -16,9 +16,9 @@ BR_Velocity_PID_Struct BR_Velocity_PID;//右轮速度pid控制器
 //左轮速度pid初始化函数
 void BL_Velocity_PID_Init(void)
 {
-    BL_Velocity_PID.Kp=0.3;               // 左轮比例系数
+    BL_Velocity_PID.Kp=0.5;               // 左轮比例系数
     BL_Velocity_PID.Ki=0.1;               // 左轮积分系数
-    BL_Velocity_PID.Kd=0.0;               // 左轮微分系数
+    BL_Velocity_PID.Kd=0.05;               // 左轮微分系数
     BL_Velocity_PID.P=0.0;                // 左轮比例项
     BL_Velocity_PID.I=0.0;                // 左轮积分项
     BL_Velocity_PID.D=0.0;                // 左轮微分项
@@ -28,7 +28,7 @@ void BL_Velocity_PID_Init(void)
     BL_Velocity_PID.ErrorThresh=50.0;      // 左轮抗积分饱和临界误差
     BL_Velocity_PID.ErrorInt=0.0;         // 左轮累计速度误差
     BL_Velocity_PID.CurVelocity=0.0;      // 左轮当前速度
-    BL_Velocity_PID.TargetVelocity=V_BASE;   // 左轮目标速度
+    BL_Velocity_PID.TargetVelocity=20;   // 左轮目标速度
     BL_Velocity_PID.PwmDuty=0.0;          // 左轮pid输出量:左电机pwm占空比
     BL_Velocity_PID.OutputThreshH=50.0;    // 左轮pid输出限幅（上界）
     BL_Velocity_PID.OutputThreshL=0.0;    // 左轮pid输出限幅（下界）
@@ -37,9 +37,9 @@ void BL_Velocity_PID_Init(void)
 
 void BR_Velocity_PID_Init(void)
 {
-	BR_Velocity_PID.Kp=0.3;               // 右轮比例系数
+	BR_Velocity_PID.Kp=0.5;               // 右轮比例系数
 	BR_Velocity_PID.Ki=0.1;               // 右轮积分系数
-	BR_Velocity_PID.Kd=0.0;               // 右轮微分系数
+	BR_Velocity_PID.Kd=0.05;               // 右轮微分系数
 	BR_Velocity_PID.P=0.0;                // 右轮比例项
 	BR_Velocity_PID.I=0.0;                // 右轮积分项
 	BR_Velocity_PID.D=0.0;                // 右轮微分项
@@ -49,7 +49,7 @@ void BR_Velocity_PID_Init(void)
 	BR_Velocity_PID.ErrorInt=0.0;         // 右轮累计速度误差
 	BR_Velocity_PID.ErrorThresh=50.0;      // 右轮抗积分饱和临界误差
 	BR_Velocity_PID.CurVelocity=0.0;      // 右轮当前速度
-	BR_Velocity_PID.TargetVelocity=V_BASE;   // 右轮目标速度
+	BR_Velocity_PID.TargetVelocity=20;   // 右轮目标速度
 	BR_Velocity_PID.PwmDuty=0.0;          // 右轮pid输出量:右电机pwm占空比
 	BR_Velocity_PID.OutputThreshH=50.0;    // 右轮pid输出大小限幅（上界）
 	BR_Velocity_PID.OutputThreshL=0.0;    // 右轮pid输出大小限幅（下界）

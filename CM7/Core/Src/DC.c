@@ -14,6 +14,8 @@ void DC_Init()
     //电机1 AIN2=0，电机2 AIN4=0
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_SET);
     //初始化占空比置0
 	//HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_1);
 	//HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_3);
@@ -49,6 +51,8 @@ void BL_SetVelocity(float BL_ratio)
     {
         __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,(uint16_t)(BL_ratio*DC_ARR));//设置PWM占空比BL_ratio
         HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);   //AIN2=0
+    	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);
+    	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_RESET);
     }
 
     /*反转驱动*/
@@ -56,6 +60,8 @@ void BL_SetVelocity(float BL_ratio)
     {
         __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,(uint16_t)((1-(-BL_ratio))*DC_ARR));//设置PWM占空比BL_ratio
         HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1,GPIO_PIN_SET);   //AIN2= 1
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_SET);
     }
 }
 
@@ -81,6 +87,8 @@ void BR_SetVelocity(float BR_ratio)
     {
         __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_3,(uint16_t)(BR_ratio*DC_ARR));//设置PWM占空比BL_ratio
         HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);   //AIN4=0
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_RESET);
     }
 
     /*反转驱动*/
@@ -88,6 +96,8 @@ void BR_SetVelocity(float BR_ratio)
     {
         __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_3,(uint16_t)((1-(-BR_ratio))*DC_ARR));//设置PWM占空比BL_ratio
         HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);   //AIN4= 1
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_SET);
     }
 }
 
@@ -111,20 +121,24 @@ void SetVelocity(float BL_ratio,float BR_ratio)
 	if(MoveFlag==1)
 	{
 		//速度小到一定程度时，停止
-		if(fabs(BL_ratio)<DC_RATIO_MIN && fabs(BR_ratio)<DC_RATIO_MIN)
+		/*if(fabs(BL_ratio)<DC_RATIO_MIN && fabs(BR_ratio)<DC_RATIO_MIN && DCStopFlag==1)
 		{
 			HAL_TIM_PWM_Stop(&htim2,TIM_CHANNEL_1);
 		    HAL_TIM_PWM_Stop(&htim2,TIM_CHANNEL_3);
-		    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_SET);
-		    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
-		    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_SET);
-		    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
+		    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
+		    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
+		    DCStopFlag=0;
+		    Velocity_PID_Reset();
+		    MoveFlag=0;
 		}
 		else
 		{
 			BL_SetVelocity(BL_ratio);
 			BR_SetVelocity(BR_ratio);
 		}
+		*/
+		BL_SetVelocity(BL_ratio);
+	    BR_SetVelocity(BR_ratio);
 	}
 }
 
@@ -155,48 +169,102 @@ void GetVelocity(void)
    v_BL=delta_distance_BL_cm/(T_velocity/1000.0);
    v_BR=delta_distance_BR_cm/(T_velocity/1000.0);
 
-   if(fabs(v_BL)<0.000001 && fabs(v_BR)<0.000001)
-   {
-	   MoveFlag=0;
-	   Velocity_PID_Reset();
-   }
    //取小车两后轮速度平均值计算小车整体速度
    v_C=(v_BL+v_BR)/2;
 
+	/*if(fabs(v_BL)<10 && fabs(v_BR)<10 && DCStopFlag==1)
+	{
+		HAL_TIM_PWM_Stop(&htim2,TIM_CHANNEL_1);
+	    HAL_TIM_PWM_Stop(&htim2,TIM_CHANNEL_3);
+	    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
+	    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
+	    DCStopFlag=0;
+	    Velocity_PID_Reset();
+	    MoveFlag=0;
+	}*/
+
    //计算一个测速周期内小车移动距离,更新总距离
-    if(MoveFlag==1)
+    if(MoveFlag==1 && DistanceFlag==1)
     {
-    	Totaldistance+=(v_C*(T_velocity/1000.0));
+    	TotalDistance+=(v_C*(T_velocity/1000.0));
+    	if(TotalDistance>=TargetDistance)
+    	{
+    		StraightStopFlag=1;
+    	}
     }
 }
 
-void Turn(uint8_t dir,float time)
+void DC_Turn(int8_t dir,uint16_t angle)
 {
-	/*float w=angle/time*PI/180.0;//旋转角速度
-	float v=K/2*w;//旋转线速度
-	float ratio=(0.54+v)/107.75;*/
-	//顺时针
-	if(dir>0)
+	//float w=angle/time*PI/180.0;
+	//float v=K/2*w;//旋转线速度
+	//float ratio=(0.54+v)/107.75;
+	//顺时针转90度
+	if(dir>0 && angle==90)
 	{
 		SetVelocity(0.1,-0.1);
-		HAL_Delay((uint32_t)time*1000);
+		Set_TargetVelocity(20,-20);
+		TurnFlag=1;
+		TurnPeriod=650;
+		//DC_Stop();
 	}
-	//逆时针
-	else if(dir<0)
+	//逆时针转90度
+	else if(dir<0 && angle==90)
 	{
 		SetVelocity(-0.1,0.1);
-		HAL_Delay((uint32_t)time*1000);
+		Set_TargetVelocity(-20,20);
+		TurnFlag=1;
+		TurnPeriod=650;
+		//DC_Stop();
+	}
+	//掉头
+	if(angle==180)
+	{
+		SetVelocity(0.1,-0.1);
+		Set_TargetVelocity(20,-20);
+		TurnFlag=1;
+		TurnPeriod=1100;
+		//DC_Stop();
+	}
+}
+
+void DC_Forward(float Distance,uint8_t inf)//前进
+{
+	Set_TargetVelocity(20,20);//设置pid目标速度20
+	SetVelocity(0.1,0.1);//启动电机
+	if(inf==0)//走一定距离后停下
+	{
+		  DistanceFlag=1;
+		  TotalDistance=0;
+		  TargetDistance=Distance;
+	}
+}
+void DC_Backward(float Distance,uint8_t inf)//后退
+{
+	Set_TargetVelocity(-20,-20);//设置pid目标速度20
+    SetVelocity(-0.1,-0.1);//启动电机
+	if(inf==0)//走一定距离后停下
+	{
+		  DistanceFlag=1;
+		  TotalDistance=0;
+		  TargetDistance=Distance;
 	}
 }
 
 void DC_Stop(void)//电机停止转动
 {
-	HAL_TIM_PWM_Stop(&htim2,TIM_CHANNEL_1);
-	HAL_TIM_PWM_Stop(&htim2,TIM_CHANNEL_3);
 	__HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,0);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
 	__HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_3,0);
-	MoveFlag=0;
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_SET);
+	//HAL_TIM_PWM_Stop(&htim2,TIM_CHANNEL_1);
+	//HAL_TIM_PWM_Stop(&htim2,TIM_CHANNEL_3);
+	DCStopFlag=0;
 	Velocity_PID_Reset();
+	MoveFlag=0;
 }
+
 
 

@@ -1,7 +1,9 @@
 ../Core/Src/DC.c:12:6:DC_Init	1
-../Core/Src/DC.c:31:6:BL_SetVelocity	6
-../Core/Src/DC.c:63:6:BR_SetVelocity	6
-../Core/Src/DC.c:95:6:SetVelocity	5
-../Core/Src/DC.c:133:6:GetVelocity	4
-../Core/Src/DC.c:173:6:Turn	2
-../Core/Src/DC.c:192:6:DC_Stop	1
+../Core/Src/DC.c:33:6:BL_SetVelocity	6
+../Core/Src/DC.c:69:6:BR_SetVelocity	6
+../Core/Src/DC.c:105:6:SetVelocity	3
+../Core/Src/DC.c:147:6:GetVelocity	4
+../Core/Src/DC.c:199:6:Turn	6
+../Core/Src/DC.c:233:6:DC_Forward	2
+../Core/Src/DC.c:244:6:DC_Backward	2
+../Core/Src/DC.c:256:6:DC_Stop	1

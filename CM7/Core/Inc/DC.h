@@ -29,8 +29,10 @@ void GetVelocity(void);
 
 //以一定速度原地转弯一定时间（堵塞式）
 //dir=0 向左 dir=1 向右,angle：角度，time:希望的时间；
-void Turn(uint8_t dir,float time);
+void Turn(int8_t dir,uint16_t angle);
 
+void DC_Forward(float Distance,uint8_t inf);//前进
+void DC_Backward(float Distance,uint8_t inf);//后退
 void DC_Stop(void);//电机停止转动
 
 
