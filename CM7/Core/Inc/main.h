@@ -93,6 +93,7 @@ void Error_Handler(void);
 #define SPI2_NSS_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
+
 extern float v_BL;//左后轮�?�度 cm/s
 extern float v_BR;//右后轮�?�度 cm/s
 extern float v_C;//车整体�?�度 cm/s
@@ -117,6 +118,7 @@ extern uint8_t TurnFlag;
 extern uint32_t TurnCnt;
 extern uint32_t TurnPeriod;
 extern uint8_t DistanceFlag;
+extern uint8_t StraightStopFlag;
 extern float TargetDistance;
 
 void clip(float* val,float min,float max);//限幅函数
