@@ -75,7 +75,7 @@ uint8_t black_detected = 0;
 uint8_t medicine_detected = 0;
 char target = ' ';
 char Dir='n';//方向
-char Pos='0';//位置
+char Pos='S';//位置
 char action[20] = "stop";
 char digitDetected[20]= "";
 extern Angle_PID_Struct Angle_PID;//转向pid结构�?????????????????
@@ -135,6 +135,7 @@ uint16_t freq=10;//无线通信频率
 
 //调试阶段
 char TestStage;
+
 
 uint32_t v_cnt=0;//测�?�计数器
 float v_BL_Avg;//左轮平均速度
@@ -308,138 +309,6 @@ Error_Handler();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  if (!crossed_detected)
-		  actionLock = 0;
-	  //转换状态机
-	  switch(place)
-	  {
-	  	  case start:
-	  		  if (target != ' ')
-	  		  {
-	  			  place = pharmacy;
-	  		  }
-	  		  break;
-
-	  	  case pharmacy:
-	  		  if (cross_detected )
-	  		  {
-	  			  if (target == '1' || target == '2')
-	  			  {
-	  					  place = cross1;
-	  			  }
-	  			  else
-	  			  {
-	  				  if (strchr(digitDetected, target))
-	  				  {
-	  					  place = cross1;
-	  				  }
-//	  				  else if (strlen(digitDetected) == 4  && strchr(digitDetected, target))
-//	  				  {
-//	  					  place = cross2;
-//	  				  }
-	  			  }
-	  		  }
-	  		  break;
-
-	  	  case cross1:
-	  		  if(black_detected)
-	  		  {
-	  			  if(toWard)
-	  			  {
-	  				  place = ward;
-	  			  }
-	  			  else
-	  			  {
-	  				  place = pharmacy;
-	  			  }
-	  		  }
-	  		  break;
-	  	  case cross2:
-	  		  if (strlen(digitDetected) == 2  && strchr(digitDetected, target))
-	  		  {
-	  			  place = cross1;
-	  		  }
-	  		  break;
-	  	  case ward:
-	  		  if (cross_detected)
-	  		  {
-	  			  place = cross1;
-	  		  }
-	  		  break;
-	  	  default:
-	  }
-
-	  //执行状态机
-	  switch(place)
-	  {
-	  	  case pharmacy:
-	  		  if (!toWard)
-	  		  {
-	  			  if (!StopFlag)
-	  			  {
-	  				DC_Stop();
-	  				StopFlag = 1;
-	  			  }
-	  		  }
-	  		  else
-	  		  {
-	  			  if (!crossed_detected) {
-	  				  DC_Forward(10, 0);
-	  			  }
-	  			  else {
-	  				  WaitFlag = 1;
-
-	  				  if(WaitCnt <= WaitPeriod) DC_Stop();
-	  				  else {
-	  					  if (!actionLock)
-	  						  ActionLog[++ActionLogTop] = 0;
-	  					  actionLock = 1;
-	  					  WaitFlag = 0;
-	  					  WaitCnt = 0;
-	  					  DC_Forward(10, 0);
-	  				  }
-	  			  }
-	  		  }
-	  		  break;
-	  	  case ward:
-	  		  if (medicine_detected)
-	  		  {
-	  			  if (!OpenFlag)
-	  				DC_Forward(OpenDis, 0);
-	  			  OpenFlag = 1;
-	  		  }
-	  		  else if (!toWard)
-	  			  DC_Forward(10, 0);
-	  		  else
-	  		  {
-	  			  OpenFlag = 0;
-	  			  if (!lock && toward)
-	  			  {
-	  			  	  DC_Turn(1,180);
-	  			  	  lock = 1;
-	  			  }
-				if(TurnStopFlag==1)
-				{
-					toWard = 0;
-					lock = 0;
-					TurnStopFlag = 0;
-				}
-	  		  }
-	  		  break;
-	  	  case cross1: // 开环走， 旋转， 然后巡线forward, 直到看到十字，重新开始开环走
-			  if (OpenForward())
-			  {
-				  if (OpenTurn(dir, 90))
-				  {
-					  DC_Forward(10, 0);
-					  if(cross_detected)
-						  LoopStart = 1;
-
-				  }
-			  }
-			  break;
-
-	  }
 
 	  if(TestStage=='Z')
 	  {
@@ -569,17 +438,17 @@ Error_Handler();
 
 
 	  }
-	  }
+	  }*/
 	/*地图(数字1~8代表病房位置�???????????????????0是药房，字母代表交叉处，（字母）表示数字识别�???????????????????)
 	 *   7                         8
-	 *   |            E            |
-	 * G |(F)- - - - - - - - - -(H)| I
-	 *   |           |(D)          |
+	 *   |            C            |
+	 * D |   - - - - - - - - - -   | E
+	 *   |           |             |
 	 *   5           |             6
 	 *               |
-	 *               | C
+	 *               | B
      *     3 - - - - - - - - - 4
-	 *               |(B)
+	 *               |
 	 *               |
 	 *               |
 	 *               |
@@ -591,95 +460,258 @@ Error_Handler();
 	 *               0
 	 *
 	 * */
-   if(TestStage=='0')
-   {
-	   if(House!=0)
-	   {
 		//基础部分:单车模式
-		switch(Pos)
+		*/switch(Pos)
 		{
+		  case 'S':
+			if (target != ' ') Pos = '0';
+			break;
 		  //药房
 		  case '0':
 			  if(Dir=='n')//药房出发
 			  {
-				  if(Medicine_Flag==1)//�???????????????????测到药物装上，开始运�???????????????????,直走到�?�A�???????????????????
+				  if(medicine_detected==1)//�???????????????????测到药物装上，开始运�???????????????????,直走到�?�A�???????????????????
 				  {
-					 MoveFlag=1;
-					 Cnt_1ms=0;
-					 Location_PID.TargetLocation=distance1;
-					 Medicine_Flag=0;
+					  DC_Forward(90, 1);
 				  }
-
-				 if(MoveFlag==0)//到达'A'
-				 {
-					Pos='A';
-				 }
+				  if(crossed_detected)
+					  Pos = 'A';
 			  }
 			  else if(Dir=='s')//返回药房
 			  {
 				  Dir='n';
-				  House=0;
+				  Pos = 'S';
+				  target = ' ';
 				  HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Green Light On",strlen("Green Light On"),HAL_MAX_DELAY);//点亮绿灯
-				  Mode=0;
 			  }
 			  break;
 		  case '1':
-			  if(Dir=='l')
+			  if(Dir=='w')
 			  {
-				 if(Medicine_Flag==2)//�???????????????????测到药物卸下，回�???????????????????180�???????????????????
-				 {
-					 HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
-					 Turn(1,1);
-					 ReturnFlag=1;
-					 Medicine_Flag=0;
-					 Dir='r';
-				 }
-			  }
-			  else if(Dir=='r')
-			  {
-				  if(lock==0)
-				 {
-					 MoveFlag=1;
-					 Cnt_1ms=0;
-					 Location_PID.TargetLocation=distance2;//直走到A
-					 lock=1;
-				 }
-				 if(MoveFlag==0)//到达A
-				 {
-					Pos='A';
-					lock=0;
-				 }
-			  }
-
+			     if(MoveFlag == 1)
+			     {
+			    	if(!lock)
+			    	{
+			    		DC_ForwardWithInitialVelocity(10);
+			    		lock=1;
+			    	}
+			    	else
+			    	{
+			    		if(StraightStopFlag==1)
+			    	 	{
+			    	 		lock=0;
+			    	 		StraightStopFlag=0;
+			    	 	}
+			    	}
+			    }
+			    else
+			    {
+					 if(medicine_detected == 0)//�???????????????????测到药物卸下，回�???????????????????180�???????????????????
+					 {
+						 HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
+	//					 Turn(1,1);
+	//					 ReturnFlag=1;
+						if(!lock)
+						{
+						  DC_Turn(1,180);
+						  lock=1;
+						}
+						else{
+							if(TurnStopFlag==1)
+							{
+								Dir='e';
+								lock=0;
+								TurnStopFlag=0;
+							}
+						}
+					 }
+			    }
+			 }
+			 else if(Dir=='e')
+			 {
+				if(!lock)
+				{
+					DC_Forward(90,1);
+					lock=1;
+				}
+				else
+				{
+					if(cross_detected)
+					{
+						Pos='A';
+						lock=0;
+					}
+				}
+			}
 			  break;
 		  case '2':
-			  if(Dir=='r')
+			  if(Dir=='e')
 			  {
-				 if(Medicine_Flag==2)//�???????????????????测到药物卸下，回�???????????????????180�???????????????????
+				 if(MoveFlag == 1)
 				 {
-					 HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
-					 Turn(-1,1);
-					 ReturnFlag=1;
-					 Medicine_Flag=0;
-					 Dir='l';
-				 }
-			  }
-			  else if(Dir=='l')
+					if(!lock)
+					{
+						DC_ForwardWithInitialVelocity(10);
+						lock=1;
+					}
+					else
+					{
+						if(StraightStopFlag==1)
+						{
+							lock=0;
+							StraightStopFlag=0;
+						}
+					}
+				}
+				else
+				{
+					 if(medicine_detected == 0)//�???????????????????测到药物卸下，回�???????????????????180�???????????????????
+					 {
+						 HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
+	//					 Turn(1,1);
+	//					 ReturnFlag=1;
+						if(!lock)
+						{
+						  DC_Turn(1,180);
+						  lock=1;
+						}
+						else{
+							if(TurnStopFlag==1)
+							{
+								Dir='w';
+								lock=0;
+								TurnStopFlag=0;
+							}
+						}
+					 }
+				}
+			 }
+			 else if(Dir=='w')
+			 {
+				if(!lock)
+				{
+					DC_Forward(90,1);
+					lock=1;
+				}
+				else
+				{
+					if(cross_detected)
+					{
+						Pos='A';
+						lock=0;
+					}
+				}
+			}
+			break;
+		  case 'A':
+			  if(Dir == 'n')
 			  {
-				  if(lock==0)
-				 {
-					 MoveFlag=1;
-					 Cnt_1ms=0;
-					 Location_PID.TargetLocation=distance2;//直走到A
-					 lock=1;
+				  if (target != '1' &&  target != '2')
+				  {
+					  DC_Forward(90,1);
+					  if(cross_detected)
+					  {
+						  Pos = 'B';
+					  }
+				  }
+				  else if(target =='1')
+				  {
+					  /*
+ 					  if(!lock && !lock2)
+					  {
+						  DC_ForwardWithInitialVelocity(10);
+						  lock=1;
+					  }
+					  if(lock && StraightStopFlag)
+					  {
+					          lock=0;
+							  StraightStopFlag=0;
+							  DC_Turn(-1,90);
+							  lock2=1;
+					  }
+
+					  if(!lock && lock2 && TurnStopFlag)
+					  {
+							  Dir='w';
+							  lock=1;
+							  TurnStopFlag=0;
+							  lock2=0;
+
+					  }
+
+					   */
+					  if(!lock)
+					  {
+						  DC_ForwardWithInitialVelocity(10);
+						  lock=1;
+					  }
+					  else
+					  {
+						  if(StraightStopFlag==1)
+						  {
+							  lock=0;
+							  StraightStopFlag=0;
+						  }
+						  if (!MoveFlag)
+						  {
+
+						  }
+
+						  else
+						  {
+							  if(!lock)
+							  {
+								  DC_Turn(-1,90);
+								  lock=1;
+							  }
+							  else
+							  {
+								  if(TurnStopFlag==1)
+								  {
+									  Dir='w';
+									  lock=0;
+									  TurnStopFlag=0;
+								  }
+
+							  }
+						 }
+					  }
 				 }
-				 if(MoveFlag==0)//到达A
-				 {
-					Pos='A';
-					lock=0;
-				 }
+			     else if(target == '2')
+			     {
+					  if(!lock)
+					  {
+						  DC_ForwardWithInitialVelocity(10);
+						  lock=1;
+					  }
+					  else
+					  {
+						  if(StraightStopFlag==1)
+						  {
+							  lock=0;
+							  StraightStopFlag=0;
+						  }
+						  else
+						  {
+							  if(!lock)
+							  {
+								  DC_Turn(1,90);
+								  lock=1;
+							  }
+							  else
+							  {
+								  if(TurnStopFlag==1)
+								  {
+									  Dir='w';
+									  lock=0;
+									  TurnStopFlag=0;
+								  }
+							  }
+						 }
+					  }
 			  }
-			  break;
+			}
+
 		  case '3':
 			  if(Dir=='l')
 			  {
@@ -1407,7 +1439,7 @@ Error_Handler();
 		   Movelock=0;
 	   }
 	   */
-   }
+
 
 
    /*串口屏命令响�???????????????????*/
@@ -1813,6 +1845,37 @@ uint8_t OpenTurn(uint8_t dir, uint8_t angle)
 		LoopStart = 1;
 	}
 	return complete;
+}
+
+
+void openTurning(uint8_t clockwise,uint8_t angle)
+{
+	//启动两路pwm输出
+	HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_1);
+	HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_3);
+	__HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,0);
+	__HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_3,0);
+	if(clockwise)
+	{
+		if(angle == 90)
+		{
+			BL_SetVelocity(0.1);
+			BR_SetVelocity(-0.1);
+			HAL_Delay(500); // Delay为延时的毫秒数（ms）
+			DC_stop();
+		}
+	}
+	else
+	{
+		if(angle == 90)
+		{
+			BL_SetVelocity(0.1);
+			BR_SetVelocity(-0.1);
+			HAL_Delay(500); // Delay为延时的毫秒数（ms）
+			DC_stop();
+		}
+	}
+
 }
 
 
