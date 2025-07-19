@@ -91,8 +91,8 @@ void BR_Velocity_PID_Reset(void);
 
 
 //获取当前目标速度
-void Get_BL_TargetVelocity();
-void Get_BR_TargetVelocity();
+float Get_BL_TargetVelocity();
+float Get_BR_TargetVelocity();
 
 
 

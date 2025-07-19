@@ -71,7 +71,7 @@ uint16_t T_location=100;
 uint8_t distance_flag=0;//�?????????????????????????始累积距离标�?????????????????????????
 uint8_t MoveFlag=0;
 uint8_t toWard = 1;
-uint8_t crossed_detected = 0;
+uint8_t cross_detected = 0;
 uint8_t black_detected = 0;
 uint8_t medicine_detected = 0;
 uint16_t regularVelocity = 20;
@@ -196,7 +196,7 @@ void MoveTrack2(void);//运动轨迹2：A-O-C
 uint8_t OpenForward();
 uint8_t OpenTurn(uint8_t, uint8_t);
 void openLoopTurning(uint8_t clockwise,uint8_t angle);
-void openLoopForward(uint8_t forwardVelocity, uint8_t forwardTime)
+void openLoopForward(uint8_t forwardVelocity, uint8_t forwardTime);
 
 /* USER CODE END PFP */
 
@@ -318,136 +318,6 @@ Error_Handler();
 
     /* USER CODE BEGIN 3 */
 
-
-	  if(TestStage=='Z')
-	  {
-	  switch(Pos)
-	  {
-	    case '0':
-	    	if(Dir=='n')//起点出发
-	    	{
-	    		if(!lock)
-	    		{
-	    		  DC_Forward(90,0);
-	    		  lock=1;
-	    		}
-	    		else{
-					if(StraightStopFlag==1)
-					{
-						Pos='A';
-						lock=0;
-						StraightStopFlag=0;
-					}
-	    		}
-	    	}
-	        break;
-
-	    case '1':
-	    	if(Dir=='l')//掉头
-	    	{
-	    		if(!lock)
-	    		{
-	    		  DC_Turn(1,180);
-	    		  lock=1;
-	    		}
-	    		else{
-					if(TurnStopFlag==1)
-					{
-						Dir='l';
-						lock=0;
-						TurnStopFlag=0;
-					}
-	    		}
-	    	}
-	    	else if(Dir=='r')//直走40cm
-	    	{
-	    		if(!lock)
-	    		{
-	    		  DC_Forward(40,0);
-	    		  lock=1;
-	    		}
-	    		else{
-					if(StraightStopFlag==1)
-					{
-						Pos='A';
-						lock=0;
-						StraightStopFlag=0;
-					}
-	    		}
-	    	}
-	        break;
-
-	    case 'A':
-	    	if(Dir=='n')//路口左转
-	    	{
-	    		if(!lock)
-	    		{
-	    		  DC_Turn(-1,90);
-	    		  lock=1;
-	    		}
-	    		else{
-					if(TurnStopFlag==1)
-					{
-						Dir='l';
-						lock=0;
-						TurnStopFlag=0;
-					}
-	    		}
-	    	}
-	    	else if(Dir=='l')//直走40cm
-	    	{
-	    		if(!lock)
-	    	    {
-				  DC_Forward(40,0);
-				  lock=1;
-				}
-				else{
-					if(StraightStopFlag==1)
-					{
-						Pos='1';
-						lock=0;
-						StraightStopFlag=0;
-					}
-				}
-	    	}
-	    	else if(Dir=='r')//右转
-	    	{
-	    		if(!lock)
-	    		{
-	    		  DC_Turn(1,90);
-	    		  lock=1;
-	    		}
-	    		else{
-					if(TurnStopFlag==1)
-					{
-						Dir='l';
-						lock=0;
-						TurnStopFlag=0;
-					}
-	    		}
-	    	}
-	    	else if(Dir=='s')//直走90cm
-	    	{
-	    		if(!lock)
-	    	    {
-				  DC_Forward(90,0);
-				  lock=1;
-				}
-				else{
-					if(StraightStopFlag==1)
-					{
-						Pos='1';
-						lock=0;
-						StraightStopFlag=0;
-
-					}
-				}
-	    	}
-	        break;
-
-
-	  }
-	  }
 	/*地图(数字1~8代表病房位置�???????????????????0是药房，字母代表交叉处，（字母）表示数字识别�???????????????????)
 	 *   7                         8
 	 *   |            C            |
@@ -483,7 +353,7 @@ Error_Handler();
 				  {
 					  Set_TargetVelocity(regularVelocity,regularVelocity);
 				  }
-				  if(crossed_detected)
+				  if(cross_detected)
 					  Pos = 'A';
 			  }
 			  else if(Dir=='s')//返回药房
@@ -715,7 +585,7 @@ Error_Handler();
 				  {
 					  openLoopForward(regularVelocity,toCrossTime);
 					  openLoopTurning(1,90);
-					  actions[++action_index] = l;
+					  actions[++action_index] = 1;
 					  Dir = 'e';
 				  }
 			  }
@@ -795,7 +665,7 @@ Error_Handler();
 				  {
 					  openLoopForward(regularVelocity,toCrossTime);
 					  openLoopTurning(1,90);
-					  actions[++action_index] = l;
+					  actions[++action_index] = 1;
 					  Dir = 'e';
 				  }
 			  }
@@ -873,7 +743,7 @@ Error_Handler();
 				  {
 					  openLoopForward(regularVelocity,toCrossTime);
 					  openLoopTurning(1,90);
-					  actions[++action_index] = l;
+					  actions[++action_index] = 1;
 					  Dir = 'n';
 				  }
 			  }
@@ -1005,7 +875,7 @@ Error_Handler();
 				  {
 					  openLoopForward(regularVelocity,toCrossTime);
 					  openLoopTurning(1,90);
-					  actions[++action_index] = l;
+					  actions[++action_index] = 1;
 					  Dir = 's';
 				  }
 			  }
@@ -1118,639 +988,9 @@ Error_Handler();
 				 }
 			  }
 			  break;
+			}
 
 
-		  case '6':
-			  if(Dir=='s')
-			  {
-				 if(Medicine_Flag==2)//�???????????????????测到药物卸下，回�???????????????????180�???????????????????
-				 {
-					 HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
-					 Turn(0,1);
-					 ReturnFlag=1;
-					 Medicine_Flag=0;
-					 Dir='n';
-				 }
-			  }
-			  else if(Dir=='n')
-			  {
-				  if(lock==0)
-				 {
-					 MoveFlag=1;
-					 Cnt_1ms=0;
-					 Location_PID.TargetLocation=distance9;//直走到I
-					 lock=1;
-				 }
-				 if(MoveFlag==0)//到达I
-				 {
-					Pos='I';
-					lock=0;
-				 }
-			  }
-			  break;
-		  case '7':
-			  if(Dir=='n')
-			  {
-				 if(Medicine_Flag==2)//�???????????????????测到药物卸下，回�???????????????????180�???????????????????
-				 {
-					 HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
-					 Turn(0,1);
-					 ReturnFlag=1;
-					 Medicine_Flag=0;
-					 Dir='s';
-				 }
-			  }
-			  else if(Dir=='s')
-			  {
-				  if(lock==0)
-				 {
-					 MoveFlag=1;
-					 Cnt_1ms=0;
-					 Location_PID.TargetLocation=distance9;//直走到G
-					 lock=1;
-				 }
-				 if(MoveFlag==0)//到达F
-				 {
-					Pos='G';
-					lock=0;
-				 }
-			  }
-			  break;
-		  case '8':
-			  if(Dir=='n')
-			  {
-				 if(Medicine_Flag==2)//�???????????????????测到药物卸下，回�???????????????????180�???????????????????
-				 {
-					 HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
-					 Turn(0,1);
-					 ReturnFlag=1;
-					 Medicine_Flag=0;
-					 Dir='s';
-				 }
-			  }
-			  else if(Dir=='s')
-			  {
-				  if(lock==0)
-				 {
-					 MoveFlag=1;
-					 Cnt_1ms=0;
-					 Location_PID.TargetLocation=distance9;//直走到I
-					 lock=1;
-				 }
-				 if(MoveFlag==0)//到达I
-				 {
-					Pos='I';
-					lock=0;
-				 }
-			  }
-			  break;
-
-		  //第一交叉�???????????????????
-		  case 'A':
-			 if(Dir=='n')
-			 {
-
-				 //病房1
-				 if(House==1)
-				 {
-					Turn(0,0.5);//左转90�???????????????????
-					Dir='l';
-				 }
-				 //病房2
-				 else if(House==2)
-				 {
-					Turn(1,0.5);//右转90�???????????????????
-					Dir='r';
-				 }
-				 //其他病房
-				 else {
-					 if(lock==0)
-					 {
-						 MoveFlag=1;
-						 Cnt_1ms=0;
-						 Location_PID.TargetLocation=distance3;//直走到B
-						 lock=1;
-					 }
-					 if(MoveFlag==0)//到达B
-					 {
-						Pos='C';
-						lock=0;
-					 }
-
-			   }
-			 }
-			 else if(Dir=='s') // //直走�???????????????????'0'
-			 {
-				 if(lock==0)
-				 {
-					 MoveFlag=1;
-					 Cnt_1ms=0;
-					 Location_PID.TargetLocation=distance1;//直走到B
-					 lock=1;
-				 }
-				 if(MoveFlag==0)//到达0
-				 {
-					Pos='0';
-					lock=0;
-				 }
-
-			 }
-			 else if(Dir=='l')
-			 {
-				 if(ReturnFlag==1)//返回
-				 {
-					Turn(0,0.5);//左转90�???????????????????
-					Dir='s';
-					ReturnFlag=0;
-				 }
-				 else //前进，到�???????????????????1
-				 {
-					 if(lock==0)
-					 {
-						 MoveFlag=1;
-						 Cnt_1ms=0;
-						 Location_PID.TargetLocation=distance2;//直走到B
-						 lock=1;
-					 }
-					 if(MoveFlag==0)//到达1
-					 {
-						Pos='1';
-						HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light On",strlen("Red Light On"),HAL_MAX_DELAY);//点亮红灯
-						lock=0;
-					 }
-				 }
-
-			 }
-			 else if(Dir=='r')
-			  {
-				 if(ReturnFlag==1) //返回
-				 {
-					 Turn(0,0.5);//右转90�???????????????????
-					 Dir='s';
-					 ReturnFlag=0;
-				 }
-				 else //前进
-				 {
-					 if(lock==0)
-					 {
-						 MoveFlag=1;
-						 Cnt_1ms=0;
-						 Location_PID.TargetLocation=distance2;//直走到B
-						 lock=1;
-					 }
-					 if(MoveFlag==0)//到达2
-					 {
-						Pos='2';
-						HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light On",strlen("Red Light On"),HAL_MAX_DELAY);//点亮红灯
-						lock=0;
-					 }
-				 }
-
-			  }
-
-			  break;
-		  case 'B':
-			  if(Dir=='n')
-			  {
-				  if(LeftNum==0 && RightNum==0 && lock==0)//发�?�命令给树莓派识别数�???????????????????
-				  {
-					  HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Recognize Two Numbers",strlen("Recognize Two Numbers"),HAL_MAX_DELAY);//点亮红灯
-					  lock=1;
-				  }
-				  else if(LeftNum!=0 && RightNum!=0 && lock==1)//识别数字完成，直走至C
-				  {
-					  MoveFlag=1;
-					  Cnt_1ms=0;
-					  Location_PID.TargetLocation=distance4;//直走到C
-					  lock=0;
-				  }
-				  else if(LeftNum!=0 && RightNum!=0 && lock==0)
-				  {
-					  if(MoveFlag==0)//到达C
-					  {
-						  Pos='C';
-					  }
-				  }
-			  }
-			  break;
-		  case 'C':
-			  if(Dir=='n')
-			 {
-				 if(House==LeftNum)//目标病房号等于B左边数字,左转
-				 {
-					Turn(0,0.5);//左转90�???????????????????
-					Dir='l';
-				 }
-				 else if(House==RightNum)//目标病房号等于B右边数字,右转
-				 {
-					Turn(1,0.5);//右转90�???????????????????
-					Dir='r';
-				 }
-				 //其他病房
-				 else { //目标病房号在前面，继续前�???????????????????
-					 if(lock==0)
-					 {
-						 MoveFlag=1;
-						 Cnt_1ms=0;
-						 Location_PID.TargetLocation=distance5;//直走到D
-						 lock=1;
-					 }
-					 if(MoveFlag==0)//到达D
-					 {
-						Pos='D';
-						lock=0;
-					 }
-
-			   }
-			 }
-			   else if(Dir=='s') //直走�???????????????????0
-			   {
-				 if(lock==0)
-				 {
-					 MoveFlag=1;
-					 Cnt_1ms=0;
-					 Location_PID.TargetLocation=distance4+distance3+distance1;//直走到B
-					 lock=1;
-				 }
-				 if(MoveFlag==0)//到达0
-				 {
-					Pos='0';
-					lock=0;
-				 }
-
-			   }
-			   else if(Dir=='l')
-			   {
-				 if(ReturnFlag==1)//返回
-				 {
-					 Turn(0,0.5);//左转90�???????????????????
-					 ReturnFlag=0;
-					 Dir='s';
-				 }
-
-				 else//前进
-				 {
-					 if(lock==0)
-					 {
-						 MoveFlag=1;
-						 Cnt_1ms=0;
-						 Location_PID.TargetLocation=distance2;//直走到B
-						 lock=1;
-					 }
-					 if(MoveFlag==0)//到达3
-					 {
-						Pos='3';
-						HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light On",strlen("Red Light On"),HAL_MAX_DELAY);//点亮红灯
-						lock=0;
-					 }
-				 }
-			  }
-			   else if(Dir=='r')
-			  {
-				 if(ReturnFlag==1)//返回
-				 {
-					 Turn(1,0.5);//右转90�???????????????????
-					 ReturnFlag=0;
-					 Dir='s';
-				 }
-				 else //前进
-				 {
-					 if(lock==0)
-					 {
-						 MoveFlag=1;
-						 Cnt_1ms=0;
-						 Location_PID.TargetLocation=distance2;//直走�???????????????????4
-						 lock=1;
-					 }
-					 if(MoveFlag==0)//到达4
-					 {
-						Pos='4';
-						HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light On",strlen("Red Light On"),HAL_MAX_DELAY);//点亮红灯
-						lock=0;
-					 }
-				 }
-
-			  }
-
-			  break;
-		  case 'D':
-			  if(Dir=='n')
-			  {
-				  if(LeftNum==0 && RightNum==0 && lock==0)//发�?�命令给树莓派识别数�???????????????????
-				  {
-					  HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Recognize Two Numbers",strlen("Recognize Two Numbers"),HAL_MAX_DELAY);//点亮红灯
-					  lock=1;
-				  }
-				  else if(LeftNum!=0 && RightNum!=0 && lock==1)//识别数字完成，直走至E
-				  {
-					  MoveFlag=1;
-					  Cnt_1ms=0;
-					  Location_PID.TargetLocation=distance6;//直走到E
-					  lock=0;
-				  }
-				  else if(LeftNum!=0 && RightNum!=0 && lock==0)
-				  {
-					  if(MoveFlag==0)//到达E
-					  {
-						  Pos='E';
-					  }
-				  }
-			  }
-			  break;
-		  case 'E':
-			   if(Dir=='n')
-			  {
-				 if(House==LeftNum)//目标病房号等于D左边数字,左转
-				 {
-					Turn(0,0.5);//左转90�???????????????????
-					Dir='l';
-				 }
-				 else if(House==RightNum)//目标病房号等于D右边数字,右转
-				 {
-					Turn(1,0.5);//右转90�???????????????????
-					Dir='r';
-				 }
-			  }
-			   else if(Dir=='s') //直走�???????????????????0
-			   {
-				 if(lock==0)
-				 {
-					 MoveFlag=1;
-					 Cnt_1ms=0;
-					 Location_PID.TargetLocation=distance6+distance5+distance4+distance3+distance1;//直走�???????????????????0
-					 lock=1;
-				 }
-				 if(MoveFlag==0)//到达0
-				 {
-					Pos='0';
-					lock=0;
-				 }
-
-			   }
-			   else if(Dir=='l')
-			   {
-				 if(ReturnFlag==1)//返回
-				 {
-					 Turn(0,0.5);//左转90�???????????????????
-					 ReturnFlag=0;
-					 Dir='s';
-				 }
-				 else//前进
-				 {
-					 if(lock==0)
-					 {
-						 MoveFlag=1;
-						 Cnt_1ms=0;
-						 Location_PID.TargetLocation=distance7;//直走到F
-						 lock=1;
-					 }
-					 if(MoveFlag==0)//到达F
-					 {
-						Pos='F';
-						lock=0;
-					 }
-				 }
-
-			   }
-			   else if(Dir=='r') //直走到�?�H�???????????????????
-			  {
-				 if(ReturnFlag==1)//返回
-				 {
-					 Turn(1,0.5);//右转90�???????????????????
-					 ReturnFlag=0;
-					 Dir='s';
-				 }
-				 else
-				 {
-					 if(lock==0)
-					 {
-						 MoveFlag=1;
-						 Cnt_1ms=0;
-						 Location_PID.TargetLocation=distance7;//直走到B
-						 lock=1;
-					 }
-					 if(MoveFlag==0)//到达H
-					 {
-						Pos='H';
-						lock=0;
-					 }
-				 }
-			  }
-			  break;
-		  case 'F':
-			  if(Dir=='l')
-			  {
-				  if(LeftNum==0 && RightNum==0 && lock==0)//发�?�命令给树莓派识别数�???????????????????
-				  {
-					  HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Recognize Two Numbers",strlen("Recognize Two Numbers"),HAL_MAX_DELAY);//点亮红灯
-					  lock=1;
-				  }
-				  else if(LeftNum!=0 && RightNum!=0 && lock==1)//识别数字完成，直走至G
-				  {
-					  MoveFlag=1;
-					  Cnt_1ms=0;
-					  Location_PID.TargetLocation=distance8;//直走到G
-					  lock=0;
-				  }
-				  else if(LeftNum!=0 && RightNum!=0 && lock==0)
-				  {
-					  if(MoveFlag==0)//到达G
-					  {
-						  Pos='G';
-					  }
-				  }
-			  }
-			  break;
-		  case 'G':
-			  if(Dir=='l')
-			  {
-				 if(House==LeftNum)//目标病房号等于F左边数字,左转
-				 {
-					Turn(0,0.5);//左转90�???????????????????
-					Dir='s';
-				 }
-				 else if(House==RightNum)//目标病房号等于F右边数字,右转
-				 {
-					Turn(1,0.5);//右转90�???????????????????
-					Dir='n';
-				 }
-			  }
-			   else if(Dir=='r') //直走到E
-			   {
-				 if(lock==0)
-				 {
-					 MoveFlag=1;
-					 Cnt_1ms=0;
-					 Location_PID.TargetLocation=distance8+distance7;//直走到E
-					 lock=1;
-				 }
-				 if(MoveFlag==0)//到达E
-				 {
-					Pos='E';
-					lock=0;
-				 }
-
-			   }
-			   else if(Dir=='n')
-			   {
-				 if(ReturnFlag==1)//返回
-				 {
-					 Turn(1,0.5);//右转90�???????????????????
-					 ReturnFlag=0;
-					 Dir='r';
-				 }
-				 else
-				 {
-					 if(lock==0)
-					 {
-						 MoveFlag=1;
-						 Cnt_1ms=0;
-						 Location_PID.TargetLocation=distance9;//直走�???????????????????7
-						 lock=1;
-					 }
-					 if(MoveFlag==0)//到达7
-					 {
-						Pos='7';
-						lock=0;
-					 }
-				 }
-
-			   }
-			   else if(Dir=='s')
-			  {
-				 if(ReturnFlag==1)//返回
-				 {
-					 Turn(0,0.5);//左转90�???????????????????
-					 ReturnFlag=0;
-					 Dir='r';
-				 }
-				 else
-				 {
-					 if(lock==0)
-					 {
-						 MoveFlag=1;
-						 Cnt_1ms=0;
-						 Location_PID.TargetLocation=distance9;//直走�???????????????????5
-						 lock=1;
-					 }
-					 if(MoveFlag==0)//到达5
-					 {
-						Pos='5';
-						lock=0;
-					 }
-				 }
-
-			  }
-			  break;
-		  case 'H':
-			  if(Dir=='r')
-			  {
-				  if(LeftNum==0 && RightNum==0 && lock==0)//发�?�命令给树莓派识别数�???????????????????
-				  {
-					  HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Recognize Two Numbers",strlen("Recognize Two Numbers"),HAL_MAX_DELAY);//点亮红灯
-					  lock=1;
-				  }
-				  else if(LeftNum!=0 && RightNum!=0 && lock==1)//识别数字完成，直走至G
-				  {
-					  MoveFlag=1;
-					  Cnt_1ms=0;
-					  Location_PID.TargetLocation=distance8;//直走到I
-					  lock=0;
-				  }
-				  else if(LeftNum!=0 && RightNum!=0 && lock==0)
-				  {
-					  if(MoveFlag==0)//到达G
-					  {
-						  Pos='I';
-					  }
-				  }
-			  }
-			  break;
-		  case 'I':
-			  if(Dir=='l')
-			  {
-				 if(House==LeftNum)//目标病房号等于H左边数字,左转
-				 {
-					Turn(0,0.5);//左转90�???????????????????
-					Dir='n';
-				 }
-				 else if(House==RightNum)//目标病房号等于H右边数字,右转
-				 {
-					Turn(1,0.5);//右转90�???????????????????
-					Dir='s';
-				 }
-			  }
-			   else if(Dir=='l') //直走到E
-			   {
-				 if(lock==0)
-				 {
-					 MoveFlag=1;
-					 Cnt_1ms=0;
-					 Location_PID.TargetLocation=distance8+distance7;//直走到E
-					 lock=1;
-				 }
-				 if(MoveFlag==0)//到达E
-				 {
-					Pos='E';
-					lock=0;
-				 }
-
-			   }
-			   else if(Dir=='n')
-			   {
-				 if(ReturnFlag==1)//返回
-				 {
-					 Turn(0,0.5);//左转90�???????????????????
-					 ReturnFlag=0;
-					 Dir='l';
-				 }
-				 else
-				 {
-					 if(lock==0)
-					 {
-						 MoveFlag=1;
-						 Cnt_1ms=0;
-						 Location_PID.TargetLocation=distance9;//直走�???????????????????8
-						 lock=1;
-					 }
-					 if(MoveFlag==0)//到达8
-					 {
-						Pos='8';
-						lock=0;
-					 }
-				 }
-
-			   }
-			   else if(Dir=='s')
-			  {
-				 if(ReturnFlag==1)//返回
-				 {
-					 Turn(1,0.5);//右转90�???????????????????
-					 ReturnFlag=0;
-					 Dir='l';
-				 }
-				 else
-				 {
-					 if(lock==0)
-					 {
-						 MoveFlag=1;
-						 Cnt_1ms=0;
-						 Location_PID.TargetLocation=distance9;//直走�???????????????????6
-						 lock=1;
-					 }
-					 if(MoveFlag==0)//到达6
-					 {
-						Pos='6';
-						lock=0;
-					 }
-				 }
-			  }
-			  break;
-		  default:
-			  break;
-
-
-		}
 
        /*
          if(MoveFlag==1 && Movelock==0)
@@ -1766,14 +1006,14 @@ Error_Handler();
 
 
 
-   /*串口屏命令响�???????????????????*/
+   /*串口屏命令响应*/
    	if( Touch_pannel_receive_completed ==1)
    	{
    		switch(Touch_pannel_Uart2_RxBuffer[1])
    		{
    	      //模式切换:单车模式
    		   case 0x01:
-   			  Mode=1;
+//   			  Mode=1;
    			  //发�?�命令给树莓派，准备识别�???????????????????个数�???????????????????
    			  HAL_UART_Transmit(&hlpuart1,"Recognize One Number",strlen("Recognize One Number"),HAL_MAX_DELAY);
    			  HAL_UART_Transmit(&hlpuart1,"Green Light Off",strlen("Green Light Off"),HAL_MAX_DELAY);//熄灭上一次任务完成后点亮的绿�???????????????????
@@ -1781,12 +1021,12 @@ Error_Handler();
    			  break;
    	      //模式切换:双车模式1（拓展题1�???????????????????
    		   case 0x02:
-   			  Mode=2;
+//   			  Mode=2;
    			  Touch_pannel_Uart2_RxBuffer[1] = 0x0;
    			  break;
    	     //模式切换:双车模式2（拓展题2�???????????????????
 			   case 0x03:
-				  Mode=3;
+//				  Mode=3;
 				  Touch_pannel_Uart2_RxBuffer[1] = 0x0;
 				  break;
 		     //车前进（有�?�度pid�????????
@@ -1826,17 +1066,17 @@ Error_Handler();
 				   break;
 			//车左�?
 			   case 0x17:
-				   Turn(-1,90);
+				   openLoopTurning(-1, 90);
 				   Touch_pannel_Uart2_RxBuffer[1] = 0x0;
 				   break;
 			//车右�?
 			   case 0x18:
-				   Turn(1,90);
+				   openLoopTurning(1, 90);
 				   Touch_pannel_Uart2_RxBuffer[1] = 0x0;
 				   break;
 			//车掉�?
 			   case 0x19:
-				   Turn(1,180);
+				   openLoopTurning(1, 180);
 				   Touch_pannel_Uart2_RxBuffer[1] = 0x0;
 				   break;
 
