@@ -288,7 +288,7 @@ Error_Handler();
 
   HAL_UART_Receive_IT(&huart2, (uint8_t*)&RxBuffer, 1);
 //串口测试
-  HAL_UART_Receive_IT(&hlpuart1,&PiRxChar,1);//使能接收中断
+//  HAL_UART_Receive_IT(&hlpuart1,&PiRxChar,1);//使能接收中断
   HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"hi1\r\n",strlen("hi1\r\n"),HAL_MAX_DELAY);
   uint8_t lock=0;
   uint8_t Movelock=0;
@@ -318,7 +318,7 @@ Error_Handler();
    		{
    	      //模式切换:单车模式
    		   case 0x01:
-   			  Mode=1;
+//   			  Mode=1;
    			  //发�?�命令给树莓派，准备识别�???????????????????个数�???????????????????
    			  HAL_UART_Transmit(&hlpuart1,"Recognize One Number",strlen("Recognize One Number"),HAL_MAX_DELAY);
    			  HAL_UART_Transmit(&hlpuart1,"Green Light Off",strlen("Green Light Off"),HAL_MAX_DELAY);//熄灭上一次任务完成后点亮的绿�???????????????????
@@ -326,12 +326,12 @@ Error_Handler();
    			  break;
    	      //模式切换:双车模式1（拓展题1�???????????????????
    		   case 0x02:
-   			  Mode=2;
+//   			  Mode=2;
    			  Touch_pannel_Uart2_RxBuffer[1] = 0x0;
    			  break;
    	     //模式切换:双车模式2（拓展题2�???????????????????
 			   case 0x03:
-				  Mode=3;
+//				  Mode=3;
 				  Touch_pannel_Uart2_RxBuffer[1] = 0x0;
 				  break;
 		     //车前进（有�?�度pid�????????
@@ -383,8 +383,9 @@ Error_Handler();
 				   break;
 			//车掉�?
 			   case 0x19:
-				   Turn(1,180);
-				   Touch_pannel_Uart2_RxBuffer[1] = 0x0;
+//				   Turn(1,180);
+				   //Touch_pannel_Uart2_RxBuffer[1] = 0x0;
+				   openLoopTurning(1,180);
 				   break;
 
    		   default:
@@ -602,24 +603,24 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	        }
 	}
 	//和stm32通信（与树莓派间接�?�信�???????????????
-	if(huart==&hlpuart1)
-	{
-		if(PiRxChar=='\r')
-		{
-
-		}
-		else if(PiRxChar=='\n')
-		{
-			PiRxStrBuf[PiRxCharIdx++]='\0';
-			PiRxCharIdx=0;
-			PiRxStrFlag=1;
-		}
-		else
-		{
-			PiRxStrBuf[PiRxCharIdx++]=PiRxChar;
-		}
-		HAL_UART_Receive_IT(&hlpuart1,&PiRxChar,1);//重新使能接收中断
-	}
+//	if(huart==&hlpuart1)
+//	{
+//		if(PiRxChar=='\r')
+//		{
+//
+//		}
+//		else if(PiRxChar=='\n')
+//		{
+//			PiRxStrBuf[PiRxCharIdx++]='\0';
+//			PiRxCharIdx=0;
+//			PiRxStrFlag=1;
+//		}
+//		else
+//		{
+//			PiRxStrBuf[PiRxCharIdx++]=PiRxChar;
+//		}
+//		HAL_UART_Receive_IT(&hlpuart1,&PiRxChar,1);//重新使能接收中断
+//	}
 }
 
 
@@ -730,20 +731,34 @@ void openLoopTurning(uint8_t clockwise,uint8_t angle)
 	{
 		if(angle == 90)
 		{
-			BL_SetVelocity(0.1);
-			BR_SetVelocity(-0.1);
-			HAL_Delay(500); // Delay为延时的毫秒数（ms）
-			DC_stop();
+			BL_SetVelocity(0.2);
+			BR_SetVelocity(-0.2);
+			HAL_Delay(900); // Delay为延时的毫秒数（ms）
+			DC_Stop();
+		}
+		if(angle == 180)
+		{
+			BL_SetVelocity(0.2);
+			BR_SetVelocity(-0.2);
+			HAL_Delay(1800); // Delay为延时的毫秒数（ms）
+			DC_Stop();
 		}
 	}
 	else
 	{
 		if(angle == 90)
 		{
-			BL_SetVelocity(0.1);
-			BR_SetVelocity(-0.1);
-			HAL_Delay(500); // Delay为延时的毫秒数（ms）
-			DC_stop();
+			BL_SetVelocity(-0.2);
+			BR_SetVelocity(0.2);
+			HAL_Delay(900); // Delay为延时的毫秒数（ms）
+			DC_Stop();
+		}
+		if(angle == 180)
+		{
+			BL_SetVelocity(-0.2);
+			BR_SetVelocity(0.2);
+			HAL_Delay(1800); // Delay为延时的毫秒数（ms）
+			DC_Stop();
 		}
 	}
 
