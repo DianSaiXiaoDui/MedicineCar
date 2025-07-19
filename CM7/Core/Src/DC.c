@@ -239,6 +239,15 @@ void DC_Forward(float Distance,uint8_t inf)//前进
 		  TargetDistance=Distance;
 	}
 }
+
+void DC_ForwardWithInitialVelocity(float Distance)//开环有初速度前进固定一段距离
+{
+	DistanceFlag=1;
+    TotalDistance=0;
+    TargetDistance=Distance;
+}
+
+
 void DC_Backward(float Distance,uint8_t inf)//后退
 {
 	Set_TargetVelocity(-20,-20);//设置pid目标速度20
