@@ -38,4 +38,6 @@ void Angle_PID_Init(void);//初始化函数
 void Angle_PID_Control(void);//转向环pid控制
 
 void Angle_PID_Reset(void);
+
+void Angle_PID_Update(void);
 #endif /* INC_ANGLE_PID_H_ */

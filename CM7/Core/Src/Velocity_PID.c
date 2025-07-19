@@ -216,6 +216,16 @@ void Set_TargetVelocity(float vl,float vr)
 	BR_Velocity_PID.TargetVelocity=vr;
 }
 
+void Get_BL_TargetVelocity()
+{
+	return BL_Velocity_PID.TargetVelocity;
+}
+
+void Get_BR_TargetVelocity()
+{
+	return BR_Velocity_PID.TargetVelocity;
+}
+
 void Set_BL_Kp(float kp)
 {
 	BL_Velocity_PID.Kp=kp;

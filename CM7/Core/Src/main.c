@@ -28,6 +28,7 @@
 /* USER CODE BEGIN Includes */
 #include "DC.h"
 #include "Velocity_PID.h"
+#include "Angle_PID.h"
 #include "dwt_delay.h"
 #include "string.h"
 #include "stdio.h"
@@ -294,7 +295,7 @@ Error_Handler();
 
   HAL_UART_Receive_IT(&huart2, (uint8_t*)&RxBuffer, 1);
 //串口测试
-  HAL_UART_Receive_IT(&hlpuart1,&PiRxChar,1);//使能接收中断
+//  HAL_UART_Receive_IT(&hlpuart1,&PiRxChar,1);//使能接收中断
   HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"hi1\r\n",strlen("hi1\r\n"),HAL_MAX_DELAY);
   uint8_t lock=0;
   uint8_t Movelock=0;
@@ -1852,6 +1853,8 @@ Error_Handler();
 	 Velocity_Plot();
    }
 
+	Angle_PID_Update(); // 巡线更新
+
     if(MoveFlag==1 && Velocity_PID_UpdateFlag==1)
     {
     	Velocity_PID_UpdateFlag=0;
@@ -2054,24 +2057,24 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	        }
 	}
 	//和stm32通信（与树莓派间接�?�信�???????????????
-	if(huart==&hlpuart1)
-	{
-		if(PiRxChar=='\r')
-		{
-
-		}
-		else if(PiRxChar=='\n')
-		{
-			PiRxStrBuf[PiRxCharIdx++]='\0';
-			PiRxCharIdx=0;
-			PiRxStrFlag=1;
-		}
-		else
-		{
-			PiRxStrBuf[PiRxCharIdx++]=PiRxChar;
-		}
-		HAL_UART_Receive_IT(&hlpuart1,&PiRxChar,1);//重新使能接收中断
-	}
+//	if(huart==&hlpuart1)
+//	{
+//		if(PiRxChar=='\r')
+//		{
+//
+//		}
+//		else if(PiRxChar=='\n')
+//		{
+//			PiRxStrBuf[PiRxCharIdx++]='\0';
+//			PiRxCharIdx=0;
+//			PiRxStrFlag=1;
+//		}
+//		else
+//		{
+//			PiRxStrBuf[PiRxCharIdx++]=PiRxChar;
+//		}
+//		HAL_UART_Receive_IT(&hlpuart1,&PiRxChar,1);//重新使能接收中断
+//	}
 }
 
 
