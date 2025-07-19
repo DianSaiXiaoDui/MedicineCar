@@ -4,7 +4,7 @@
  *  Created on: Jul 9, 2025
  */
 #include "Angle_PID.h"
-
+#include "Velocity_PID.h"
 
 Angle_PID_Struct Angle_PID;//转向pid结构体
 
@@ -80,4 +80,12 @@ void Angle_PID_Control()
 void Angle_PID_Reset()
 {
 	Angle_PID.Reset=1;
+}
+
+void Angle_PID_Update()
+{
+	Angle_PID_Control();
+	int new_BL_Vel = Get_BL_TargetVelocity() + Angle_PID.deltaVelocity;
+	int new_RL_Vel = Get_BR_TargetVelocity() + Angle_PID.deltaVelocity;
+	Set_TargetVelocity(new_BL_Vel, new_RL_Vel);
 }
