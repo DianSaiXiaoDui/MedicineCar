@@ -390,6 +390,7 @@ Error_Handler();
 			    	 HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
 			    	 openLoopTurning(1,180);
 			    	 toWard = 0;
+			    	 medicine_detected=0;//清除药物检测标志
 			    	 Dir = 'e';
 			     }
 			  }
@@ -415,6 +416,7 @@ Error_Handler();
 			     {
 			    	 HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
 			    	 openLoopTurning(1,180);
+			    	 medicine_detected=0;//清除药物检测标志
 			    	 toWard = 0;
 			    	 Dir = 'w';
 			     }
@@ -546,6 +548,7 @@ Error_Handler();
 				     {
 				    	 HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
 				    	 openLoopTurning(1,180);
+				    	 medicine_detected=0;//清除药物检测标志
 				    	 toWard = 0;
 				    	 Dir = 'e';
 				     }
@@ -573,6 +576,7 @@ Error_Handler();
 				     {
 				    	 HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
 				    	 openLoopTurning(1,180);
+				    	 medicine_detected=0;//清除药物检测标志
 				    	 toWard = 0;
 				    	 Dir = 'w';
 				     }
@@ -909,6 +913,7 @@ Error_Handler();
 				     {
 				    	 HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
 				    	 openLoopTurning(1,180);
+				    	 medicine_detected=0;//清除药物检测标志
 				    	 toWard = 0;
 				    	 Dir = 'n';
 				     }
@@ -936,6 +941,7 @@ Error_Handler();
 				     {
 				    	 HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
 				    	 openLoopTurning(1,180);
+				    	 medicine_detected=0;//清除药物检测标志
 				    	 toWard = 0;
 				    	 Dir = 's';
 				     }
@@ -1063,6 +1069,7 @@ Error_Handler();
 				     {
 				    	 HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
 				    	 openLoopTurning(1,180);
+				    	 medicine_detected=0;//清除药物检测标志
 				    	 toWard = 0;
 				    	 Dir = 'n';
 				     }
@@ -1090,6 +1097,7 @@ Error_Handler();
 				     {
 				    	 HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
 				    	 openLoopTurning(1,180);
+				    	 medicine_detected=0;//清除药物检测标志
 				    	 toWard = 0;
 				    	 Dir = 's';
 				     }
