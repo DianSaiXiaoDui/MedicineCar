@@ -7,10 +7,10 @@
 #include "Velocity_PID.h"
 
 Angle_PID_Struct Angle_PID;//转向pid结构体
-
+extern uint16_t regularVelocity;
 void Angle_PID_Init(void)
 {
-   Angle_PID.Kp=0.3;
+   Angle_PID.Kp=0.03;
    Angle_PID.Ki=0.0;
    Angle_PID.Kd=0.0;
    Angle_PID.P = 0;
@@ -20,11 +20,11 @@ void Angle_PID_Init(void)
    Angle_PID.Error1=0;
    Angle_PID.ErrorThresh = 0;
    Angle_PID.ErrorInt=0;
-   Angle_PID.IThresh=5;
+   Angle_PID.IThresh=0;
    Angle_PID.CurX = 0;
    Angle_PID.TargetX = 320;
    Angle_PID.deltaVelocity = 0;
-   Angle_PID.OutputThreshH=10;
+   Angle_PID.OutputThreshH=5;
    Angle_PID.OutputThreshL = 0;
    Angle_PID.Reset=0;
 }
@@ -81,15 +81,15 @@ void Angle_PID_Reset()
 	Angle_PID.Reset=1;
 }
 
-void Angle_PID_SetTargetX(uint16_t TargetX)
+void Angle_PID_SetCurX(uint16_t CurX)
 {
-	Angle_PID.TargetX=TargetX;
+	Angle_PID.CurX=CurX;
 }
 
 void Angle_PID_Update()
 {
 	Angle_PID_Control();
-    float new_BL_Vel = Get_BL_TargetVelocity() + Angle_PID.deltaVelocity;
-	float new_RL_Vel = Get_BR_TargetVelocity() - Angle_PID.deltaVelocity;
+    float new_BL_Vel = regularVelocity - Angle_PID.deltaVelocity;
+	float new_RL_Vel = regularVelocity + Angle_PID.deltaVelocity;
 	Set_TargetVelocity(new_BL_Vel, new_RL_Vel);
 }

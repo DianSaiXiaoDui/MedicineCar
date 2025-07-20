@@ -8,7 +8,7 @@
 #ifndef INC_ANGLE_PID_H_
 #define INC_ANGLE_PID_H_
 
-#include "CCD.h"
+#include "main.h"
 
 //转向pid结构体定义
 typedef struct{
@@ -41,5 +41,6 @@ void Angle_PID_Reset(void);
 
 void Angle_PID_Update(void);
 
-void Angle_PID_SetTargetX(uint16_t TargetX);
+void Angle_PID_SetCurX(uint16_t CurX);
+
 #endif /* INC_ANGLE_PID_H_ */

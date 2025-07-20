@@ -75,8 +75,8 @@ uint8_t cross_detected = 0;
 uint8_t block_detected = 0;
 uint8_t medicine_detected = 0;
 uint16_t regularVelocity = 20;
-uint16_t toBlockTime = 500;
-uint16_t toCrossTime = 500;
+uint32_t toBlockTime = 4000000;
+uint32_t toCrossTime = 6000000;
 char target = ' ';
 char Dir='n';//方向
 char Pos='S';//位置
@@ -187,7 +187,11 @@ uint8_t Velocity_Plot_Indicate=0;
 
 float actual_Delay=0;
 int8_t actions[3];
-uint8_t action_index = -1;
+int8_t action_index = -1;
+
+uint8_t lock=0;
+
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -200,7 +204,7 @@ void MoveTrack2(void);//运动轨迹2：A-O-C
 uint8_t OpenForward();
 uint8_t OpenTurn(uint8_t, uint8_t);
 void openLoopTurning(int8_t clockwise,uint16_t angle);
-void openLoopForward(uint8_t forwardVelocity, uint8_t forwardTime);
+void openLoopForward(uint8_t forwardVelocity, uint32_t forwardTime);
 void Enable_CrossDetected(void);
 void Enable_BlockDetected(void);
 void Require_Numbers(uint8_t num);
@@ -298,11 +302,12 @@ Error_Handler();
   /* USER CODE BEGIN 2 */
   DC_Init();//编码电机初始�????????
   Velocity_PID_Init();//速度pid初始�????????
+  Angle_PID_Init();
   DWT_Init();//延时单元初始�????????
 
-  HAL_UART_Receive_IT(&huart2, (uint8_t*)&RxBuffer, 1);
+
 //串口测试
-//  HAL_UART_Receive_IT(&hlpuart1,&PiRxChar,1);//使能接收中断
+  HAL_UART_Receive_IT(&hlpuart1,&PiRxChar,1);//使能接收中断
   HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"hi1\r\n",strlen("hi1\r\n"),HAL_MAX_DELAY);
   uint8_t lock=0;
   uint8_t Movelock=0;
@@ -373,11 +378,21 @@ Error_Handler();
 			  }
 			  else if(Dir=='s')//返回药房
 			  {
-				  Dir='n';
-				  Pos = 'S';
-				  target = ' ';
-				  action_index=-1;
-				  HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Green Light On",strlen("Green Light On"),HAL_MAX_DELAY);//点亮绿灯
+				 if(MoveFlag)
+					 openLoopForward(regularVelocity,toBlockTime);
+				 if(!MoveFlag)
+				 {
+					  Dir='n';
+					  Pos = 'S';
+					  target = ' ';
+					  action_index=-1;
+					  PiRxStrBuf[0]='\0';
+					  medicine_detected = 0;
+					  cross_detected= 0;
+					  toWard = 1;
+					  HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Green Light On",strlen("Green Light On"),HAL_MAX_DELAY);//点亮绿灯
+				 }
+
 			  }
 			  break;
 		  case '1':
@@ -439,11 +454,21 @@ Error_Handler();
 			  {
 				  if (target != '1' &&  target != '2')
 				  {
-					  Enable_CrossDetected();//等待十字路口检测
+//					  if (action_index != -1)
+					  if(!lock)
+					  {
+						  openLoopForward(regularVelocity,toCrossTime);
+						  DC_Start(0);
+						  lock=1;
+						  Enable_CrossDetected();//等待十字路口检测
+					  }
+
 					  if(cross_detected)//检测到十字路口
 					  {
 						  actions[++action_index] = 0;
 						  Pos = 'B';
+						  lock=0;
+						  cross_detected=0;
 					  }
 				  }
 				  else if(target =='1')
@@ -605,15 +630,21 @@ Error_Handler();
 				  }
 				  else if (target != digitDetected[0] &&  target != digitDetected[1])
 				  {
-					  if(!MoveFlag)
+
+					  if(!lock)
 					  {
-						  DC_Start(0);
-						  Enable_CrossDetected();
+						openLoopForward(regularVelocity,toCrossTime);
+						DC_Start(0);
+						Enable_CrossDetected();
+						lock=1;
 					  }
+
 					  if(cross_detected)
 					  {
 						  actions[++action_index] = 0;
 						  Pos = 'C';
+						  lock=0;
+						  cross_detected=0;
 					  }
 				  }
 				  else if(target == digitDetected[0])
@@ -726,7 +757,7 @@ Error_Handler();
 					  }
 					  actions[++action_index] = -1;
 				  }
-				  else if(target == digitDetected[1] || target==digitDetected[2])
+				  else if(target == digitDetected[2] || target==digitDetected[3])
 				  {
 				      openLoopForward(regularVelocity,toCrossTime);
 
@@ -1159,10 +1190,8 @@ Error_Handler();
 				  break;
 		     //车前进（有�?�度pid�????????
 			   case 0x11:
-				  // DC_Forward(90,0);
-                  TestStage='Z';
-                  Pos='0';
-                  Dir='n';
+				  //DC_Forward(90,0);
+				  openLoopForward(regularVelocity,toBlockTime);
 				  Touch_pannel_Uart2_RxBuffer[1] = 0x0;
 
 				  break;
@@ -1209,6 +1238,9 @@ Error_Handler();
 				   break;
 				//开始执行任务时，向单片机发送识别一个数字的请求
 			   case 0x20:
+				   PiRxStrBuf[0]='\0';
+				   medicine_detected = 0;
+				   cross_detected= 0;
 				   Require_Numbers(1);
 				   break;
 				//模拟药物装上
@@ -1231,22 +1263,22 @@ Error_Handler();
 	   //与k230通信
 	   	if(PiRxStrFlag==1)
 	   	{
-            uint8_t Num1=0,Num2=0,Num3=0,Num4=0;
-            uint8_t TempCx=0;
+	   		uint16_t Num1=0,Num2=0,Num3=0,Num4=0;
+	   		uint16_t TempCx=0;
             //识别到一个数字
-			if(sscanf((const char *)&PiRxStrBuf,"detect one number: %d",Num1)==1)
+			if(sscanf((const char *)&PiRxStrBuf,"detect one number: %d",&Num1)==1)
 			{
 				target='0'+Num1;//记录当前要去的病房号
 			}
 			//识别到两个数字
-			else if(sscanf((const char *)&PiRxStrBuf,"detect two numbers: %d %d",Num1,Num2)==2)
+			else if(sscanf((const char *)&PiRxStrBuf,"detect two numbers: %d %d",&Num1,&Num2)==2)
 			{
 				digitDetected[0]='0'+Num1;
 				digitDetected[1]='0'+Num2;
 				digitDetected[2]='\0';
 			}
             //识别到四个数字
-			else if(sscanf((const char *)&PiRxStrBuf,"detect two numbers: %d %d %d %d",Num1,Num2,Num3,Num4)==4)
+			else if(sscanf((const char *)&PiRxStrBuf,"detect four numbers: %d %d %d %d",&Num1,&Num2,&Num3,&Num4)==4)
 			{
 				digitDetected[0]='0'+Num1;
 				digitDetected[1]='0'+Num2;
@@ -1263,12 +1295,25 @@ Error_Handler();
 			{
 			   cross_detected=1;
 			}
-			//识别到巡线信息
-			else if(sscanf((const char *)&PiRxStrBuf,"cx: %d",TempCx)==1)
+			//识别到交叉路口
+			else if(strcmp(&PiRxStrBuf,"detect block")==0)//车辆停转
 			{
-               Angle_PID_SetTargetX(TempCx);
-               Angle_PID_Update();
+			   block_detected=1;
 			}
+			//识别到巡线信息
+			else
+			{
+				if(sscanf((const char *)&PiRxStrBuf,"cx:%d",&TempCx)==1)
+				{
+				   Angle_PID_SetCurX(TempCx);
+				   Angle_PID_Update();
+				}
+				else{
+					Set_TargetVelocity(regularVelocity,regularVelocity);
+				}
+			}
+
+
 			PiRxStrFlag=0;
 		}
 
@@ -1601,19 +1646,19 @@ uint8_t OpenTurn(uint8_t dir, uint8_t angle)
 
 void openLoopTurning(int8_t clockwise,uint16_t angle)
 {
-    uint16_t TurnCnt=0;
-    uint16_t TurnPeriod=0;
+    uint32_t TurnCnt=0;
+    uint32_t TurnPeriod=0;
 	if(clockwise > 0)//右转
 	{
 		if(angle == 90)
 		{
             DC_Start(1);
-			TurnPeriod=1000;
+			TurnPeriod=2800000;
 		}
 		if(angle == 180)
 		{
 			DC_Start(1);
-			TurnPeriod=2000;
+			TurnPeriod=4600000;
 		}
 	}
 	else
@@ -1621,12 +1666,12 @@ void openLoopTurning(int8_t clockwise,uint16_t angle)
 		if(angle == 90)
 		{
 			DC_Start(2);
-			TurnPeriod=1000;
+			TurnPeriod=2800000;
 		}
 		if(angle == 180)
 		{
 			DC_Start(2);
-			TurnPeriod=2000;
+			TurnPeriod=4600000;
 		}
 	}
 	while(TurnCnt++<=TurnPeriod)
@@ -1642,16 +1687,31 @@ void openLoopTurning(int8_t clockwise,uint16_t angle)
 	DC_Stop();
 }
 
-void openLoopForward(uint8_t forwardVelocity, uint8_t forwardTime)
+void openLoopForward(uint8_t forwardVelocity, uint32_t forwardTime)
 {
 	if(MoveFlag==0)
 	{
 		DC_Start(0);//启动电机
 	}
-	uint16_t forwardCnt=0;
-	uint16_t forwardPeriod=forwardTime;
+	uint32_t forwardCnt=0;
+	uint32_t forwardPeriod=forwardTime;
 	while(forwardCnt++<=forwardPeriod)
 	{
+	    //角度pid更新
+	   	if(PiRxStrFlag==1)
+	   	{
+            uint16_t TempCx=0;
+			//识别到巡线信息
+            if(sscanf((const char *)&PiRxStrBuf,"cx:%d",&TempCx)==1)
+			{
+			   Angle_PID_SetCurX(TempCx);
+			   Angle_PID_Update();
+			}
+			else{
+				Set_TargetVelocity(regularVelocity,regularVelocity);
+			}
+			PiRxStrFlag=0;
+		}
 		//速度pid更新
 	    if(MoveFlag==1 && Velocity_PID_UpdateFlag==1)
 	    {
@@ -1660,19 +1720,7 @@ void openLoopForward(uint8_t forwardVelocity, uint8_t forwardTime)
 	       Velocity_PID_Update();//速度PID控制
 	    }
 
-	    //角度pid更新
-	   	if(PiRxStrFlag==1)
-	   	{
 
-            uint8_t TempCx=0;
-			//识别到巡线信息
-			if(sscanf((const char *)&PiRxStrBuf,"cx: %d",TempCx)==1)
-			{
-               Angle_PID_SetTargetX(TempCx);
-               Angle_PID_Update();
-			}
-			PiRxStrFlag=0;
-		}
 	}
 
 
