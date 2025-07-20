@@ -80,9 +80,9 @@ void BL_Velocity_PID_Control(void);
 void BR_Velocity_PID_Control(void);
 void Velocity_PID_Control(void);
 
-//结合速度pid和转向pid更新左右轮转速
-void Velocity_Update(void);
-void Velocity_Update_A(void);
+//速度pid更新左右轮转速
+void Velocity_PID_Update(void);
+//void Velocity_Update_A(void);
 
 //速度pid复位
 void Velocity_PID_Reset(void);

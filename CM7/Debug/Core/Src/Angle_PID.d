@@ -40,7 +40,7 @@ Core/Src/Angle_PID.o: ../Core/Src/Angle_PID.c ../Core/Inc/Angle_PID.h \
  ../Core/Inc/servo.h ../Core/Inc/tim.h ../Core/Inc/DC.h \
  ../Core/Inc/Velocity_PID.h ../Core/Inc/Angle_PID.h \
  ../Core/Inc/Location_PID.h ../Core/Inc/24l01.h ../Core/Inc/spi.h \
- ../Core/Inc/dwt_delay.h ../Core/Inc/adc.h
+ ../Core/Inc/dwt_delay.h ../Core/Inc/adc.h ../Core/Inc/Velocity_PID.h
 ../Core/Inc/Angle_PID.h:
 ../Core/Inc/CCD.h:
 ../Core/Inc/main.h:
@@ -91,3 +91,4 @@ Core/Src/Angle_PID.o: ../Core/Src/Angle_PID.c ../Core/Inc/Angle_PID.h \
 ../Core/Inc/spi.h:
 ../Core/Inc/dwt_delay.h:
 ../Core/Inc/adc.h:
+../Core/Inc/Velocity_PID.h:

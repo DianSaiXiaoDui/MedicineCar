@@ -159,7 +159,7 @@ void BR_Velocity_PID_Control(void)
 
 
 //调用pid控制函数，根据pid输出量更新左右轮速度
-void Velocity_Update(void)
+void Velocity_PID_Update(void)
 {
 	BL_Velocity_PID_Control();
 	BR_Velocity_PID_Control();

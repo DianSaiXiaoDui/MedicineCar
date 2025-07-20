@@ -42,7 +42,8 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Core/Inc/Location_PID.h ../Core/Inc/24l01.h ../Core/Inc/spi.h \
  ../Core/Inc/adc.h ../Core/Inc/usart.h ../Core/Inc/spi.h \
  ../Core/Inc/tim.h ../Core/Inc/gpio.h ../Core/Inc/DC.h \
- ../Core/Inc/Velocity_PID.h ../Core/Inc/dwt_delay.h
+ ../Core/Inc/Velocity_PID.h ../Core/Inc/Angle_PID.h \
+ ../Core/Inc/dwt_delay.h
 ../Core/Inc/main.h:
 ../../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal.h:
 ../Core/Inc/stm32h7xx_hal_conf.h:
@@ -100,4 +101,5 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Core/Inc/gpio.h:
 ../Core/Inc/DC.h:
 ../Core/Inc/Velocity_PID.h:
+../Core/Inc/Angle_PID.h:
 ../Core/Inc/dwt_delay.h:

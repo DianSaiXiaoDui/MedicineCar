@@ -23,8 +23,8 @@ typedef struct{
 	    float Error1;           // 上一横向误差
 	    float ErrorThresh;      // 抗积分饱和临界误差
 	    float ErrorInt;         // 累计横向误差
-	    float CurX;      // 当前横向坐标
-	    float TargetX;   // 目标横向坐标
+	    uint16_t CurX;      // 当前横向坐标
+	    uint16_t TargetX;   // 目标横向坐标
 	    float deltaVelocity;    // pid输出量:两轮的差速
 	    float OutputThreshH;    // pid输出限幅（上界）
 	    float OutputThreshL;    // pid输出限幅（下界）
@@ -40,4 +40,6 @@ void Angle_PID_Control(void);//转向环pid控制
 void Angle_PID_Reset(void);
 
 void Angle_PID_Update(void);
+
+void Angle_PID_SetTargetX(uint16_t TargetX);
 #endif /* INC_ANGLE_PID_H_ */

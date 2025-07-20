@@ -251,6 +251,25 @@ void DC_Backward(float Distance,uint8_t inf)//后退
 	}
 }
 
+void DC_Start(uint8_t dir)
+{
+	if(dir=='0') //直走
+	{
+	  Set_TargetVelocity(20,20);//设置pid目标速度20
+	  SetVelocity(0.1,0.1);//启动电机
+	}
+	else if(dir=='1')//右转
+	{
+	  Set_TargetVelocity(20,-20);//设置pid目标速度20
+	  SetVelocity(0.1,-0.1);//启动电机
+	}
+	else if(dir=='2')//左转
+	{
+	  Set_TargetVelocity(-20,20);//设置pid目标速度20
+	  SetVelocity(-0.1,0.1);//启动电机
+	}
+}
+
 void DC_Stop(void)//电机停止转动
 {
 	__HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,0);

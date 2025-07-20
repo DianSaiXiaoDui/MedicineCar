@@ -33,7 +33,6 @@ void Angle_PID_Init(void)
 //转向pid调控：输出和速度pid输出同数量级
 void Angle_PID_Control()
 {
-	Angle_PID.CurX=v_BR;//更新当前横向坐标
 	Angle_PID.Error0 = Angle_PID.TargetX - Angle_PID.CurX;//更新当前横向坐标误差
 
 	//计算比例项
@@ -82,10 +81,15 @@ void Angle_PID_Reset()
 	Angle_PID.Reset=1;
 }
 
+void Angle_PID_SetTargetX(uint16_t TargetX)
+{
+	Angle_PID.TargetX=TargetX;
+}
+
 void Angle_PID_Update()
 {
 	Angle_PID_Control();
-	int new_BL_Vel = Get_BL_TargetVelocity() + Angle_PID.deltaVelocity;
-	int new_RL_Vel = Get_BR_TargetVelocity() + Angle_PID.deltaVelocity;
+    float new_BL_Vel = Get_BL_TargetVelocity() + Angle_PID.deltaVelocity;
+	float new_RL_Vel = Get_BR_TargetVelocity() - Angle_PID.deltaVelocity;
 	Set_TargetVelocity(new_BL_Vel, new_RL_Vel);
 }

@@ -72,10 +72,10 @@ uint8_t distance_flag=0;//�?????????????????????????始累积距离标�?????
 uint8_t MoveFlag=0;
 uint8_t toWard = 1;
 uint8_t cross_detected = 0;
-uint8_t black_detected = 0;
+uint8_t block_detected = 0;
 uint8_t medicine_detected = 0;
 uint16_t regularVelocity = 20;
-uint16_t toBlackTime = 500;
+uint16_t toBlockTime = 500;
 uint16_t toCrossTime = 500;
 char target = ' ';
 char Dir='n';//方向
@@ -83,7 +83,6 @@ char Pos='S';//位置
 char action[20] = "stop";
 char digitDetected[20]= "";
 extern Angle_PID_Struct Angle_PID;//转向pid结构�?????????????????
-extern Location_PID_Struct Location_PID;
 extern BL_Velocity_PID_Struct BL_Velocity_PID;
 extern BR_Velocity_PID_Struct BR_Velocity_PID;
 
@@ -178,6 +177,11 @@ char NrfRxBuf[32]={0};                 //无线接收数据缓冲�????????????
 uint8_t NrfRxFlag=0; //无线接收中断
 uint8_t ReceiveHelloFlag=0;
 
+uint8_t PiRxStrBuf[128];
+uint8_t PiRxCharIdx=0;//接收字符位置索引
+uint8_t PiRxChar;//接收的字�???????????????????
+uint8_t PiRxStrFlag;//接收字符串标�???????????????????
+
 //串口�????????
 uint8_t Velocity_Plot_Indicate=0;
 
@@ -197,6 +201,9 @@ uint8_t OpenForward();
 uint8_t OpenTurn(uint8_t, uint8_t);
 void openLoopTurning(uint8_t clockwise,uint8_t angle);
 void openLoopForward(uint8_t forwardVelocity, uint8_t forwardTime);
+void Enable_CrossDetected(void);
+void Enable_BlockDetected(void);
+void Require_Numbers(uint8_t num);
 
 /* USER CODE END PFP */
 
@@ -343,7 +350,8 @@ Error_Handler();
 		switch(Pos)
 		{
 		  case 'S':
-			  if (target != ' ') Pos = '0';
+			  if (target != ' ')
+				  Pos = '0';
 			  break;
 		  //药房
 		  case '0':
@@ -351,16 +359,22 @@ Error_Handler();
 			  {
 				  if(medicine_detected==1)//检测到药物被装上
 				  {
-					  Set_TargetVelocity(regularVelocity,regularVelocity);
+					  DC_Start(0);
+					  medicine_detected=0;//清除药物检测标志
+					  Enable_CrossDetected();//等待十字路口检测
 				  }
-				  if(cross_detected)
+				  if(cross_detected==1)
+				  {
 					  Pos = 'A';
+				      cross_detected=0;
+				  }
 			  }
 			  else if(Dir=='s')//返回药房
 			  {
 				  Dir='n';
 				  Pos = 'S';
 				  target = ' ';
+				  action_index=-1;
 				  HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Green Light On",strlen("Green Light On"),HAL_MAX_DELAY);//点亮绿灯
 			  }
 			  break;
@@ -368,10 +382,8 @@ Error_Handler();
 			  if(Dir == 'w')
 			  {
 			     if(MoveFlag)
-			     {
-			    	 openLoopForward(regularVelocity,toBlackTime);
-			     }
-			     if(!medicine_detected)
+			    	 openLoopForward(regularVelocity,toBlockTime);
+			     if(!MoveFlag && medicine_detected==2)
 			     {
 			    	 HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
 			    	 openLoopTurning(1,180);
@@ -381,7 +393,11 @@ Error_Handler();
 			  }
 			  else if (Dir == 'e')
 			  {
-				  Set_TargetVelocity(regularVelocity,regularVelocity);
+				  if(!MoveFlag)
+				  {
+					  DC_Start(0);
+					  Enable_CrossDetected();
+				  }
 				  if (cross_detected)
 				  {
 					  Pos = 'A';
@@ -391,34 +407,36 @@ Error_Handler();
 		  case '2':
 			  if(Dir == 'e')
 			  {
-				 if(MoveFlag)
-				 {
-					 openLoopForward(regularVelocity,toBlackTime);
-				 }
-				 if(!medicine_detected)
-				 {
-					 HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
-					 openLoopTurning(1,180);
-					 toWard = 0;
-					 Dir = 'w';
-				 }
+			     if(MoveFlag)
+			    	 openLoopForward(regularVelocity,toBlockTime);
+			     if(!MoveFlag && medicine_detected==2)
+			     {
+			    	 HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
+			    	 openLoopTurning(1,180);
+			    	 toWard = 0;
+			    	 Dir = 'w';
+			     }
 			  }
-			 else if(Dir == 'w')
-			 {
-				 Set_TargetVelocity(regularVelocity,regularVelocity);
-				 if (cross_detected)
-				 {
-					 Pos = 'A';
-				 }
-			 }
+			  else if (Dir == 'w')
+			  {
+				  if(!MoveFlag)
+				  {
+					  DC_Start(0);
+					  Enable_CrossDetected();
+				  }
+				  if (cross_detected)
+				  {
+					  Pos = 'A';
+				  }
+			  }
 			break;
 		  case 'A':
 			  if(Dir == 'n')
 			  {
 				  if (target != '1' &&  target != '2')
 				  {
-					  Set_TargetVelocity(regularVelocity,regularVelocity);
-					  if(cross_detected)
+					  Enable_CrossDetected();//等待十字路口检测
+					  if(cross_detected)//检测到十字路口
 					  {
 						  actions[++action_index] = 0;
 						  Pos = 'B';
@@ -426,10 +444,8 @@ Error_Handler();
 				  }
 				  else if(target =='1')
 				  {
-					  if(MoveFlag)
-					  {
-						  openLoopForward(regularVelocity,toCrossTime);
-					  }
+				      openLoopForward(regularVelocity,toCrossTime);
+
 					  if(!MoveFlag)
 					  {
 						  openLoopTurning(-1,90);
@@ -438,10 +454,8 @@ Error_Handler();
 				  }
 			      else if(target == '2')
 			      {
-			    	  if(MoveFlag)
-					  {
-						  openLoopForward(regularVelocity,toCrossTime);
-					  }
+				      openLoopForward(regularVelocity,toCrossTime);
+
 					  if(!MoveFlag)
 					  {
 						  openLoopTurning(1,90);
@@ -453,18 +467,22 @@ Error_Handler();
 			  {
 				  if(toWard)
 				  {
-					  Set_TargetVelocity(regularVelocity,regularVelocity);
-					  if(cross_detected)
+					  if(!MoveFlag)
+					  {
+					    DC_Start(0);
+					    Enable_BlockDetected();
+					  }
+					  if(block_detected)
 					  {
 						  Pos = '1';
+						  block_detected=0;
 					  }
 				  }
 				  else
 				  {
-					  if(MoveFlag)
-					  {
-						  openLoopForward(regularVelocity,toCrossTime);
-					  }
+
+				      openLoopForward(regularVelocity,toCrossTime);
+
 					  if(!MoveFlag)
 					  {
 						  openLoopTurning(-1,90);
@@ -476,18 +494,23 @@ Error_Handler();
 			  {
 				  if(toWard)
 				  {
-					  Set_TargetVelocity(regularVelocity,regularVelocity);
-					  if(cross_detected)
+
+					  if(!MoveFlag)
+					  {
+						DC_Start(0);
+						Enable_BlockDetected();
+					  }
+					  if(block_detected)
 					  {
 						  Pos = '2';
+						  block_detected=0;
 					  }
 				  }
 				  else
 				  {
-					  if(MoveFlag)
-					  {
-						  openLoopForward(regularVelocity,toCrossTime);
-					  }
+
+					  openLoopForward(regularVelocity,toCrossTime);
+
 					  if(!MoveFlag)
 					  {
 						  openLoopTurning(1,90);
@@ -497,11 +520,16 @@ Error_Handler();
 			  }
 			  else if(Dir == 's')
 			  {
-				  Set_TargetVelocity(regularVelocity,regularVelocity);
-				  if (cross_detected)
+				  if(!MoveFlag)
 				  {
-					  action_index--;
+					DC_Start(0);
+					Enable_BlockDetected();
+				  }
+				  if(block_detected)
+				  {
 					  Pos = '0';
+					  block_detected=0;
+					  action_index--;
 				  }
 			  }
 			  break;
@@ -510,21 +538,23 @@ Error_Handler();
 			  {
 				  if(Dir == 'w')
 				  {
-					 if(MoveFlag)
-					 {
-						 openLoopForward(regularVelocity,toBlackTime);
-					 }
-					 if(!medicine_detected)
-					 {
-						 HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
-						 openLoopTurning(1,180);
-						 toWard = 0;
-						 Dir = 'e';
-					 }
+				     if(MoveFlag)
+				    	 openLoopForward(regularVelocity,toBlockTime);
+				     if(!MoveFlag && medicine_detected==2)
+				     {
+				    	 HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
+				    	 openLoopTurning(1,180);
+				    	 toWard = 0;
+				    	 Dir = 'e';
+				     }
 				  }
 				  else if (Dir == 'e')
 				  {
-					  Set_TargetVelocity(regularVelocity,regularVelocity);
+					  if(!MoveFlag)
+					  {
+						  DC_Start(0);
+						  Enable_CrossDetected();
+					  }
 					  if (cross_detected)
 					  {
 						  Pos = 'B';
@@ -535,26 +565,28 @@ Error_Handler();
 			  {
 				  if(Dir == 'e')
 				  {
-					 if(MoveFlag)
-					 {
-						 openLoopForward(regularVelocity,toBlackTime);
-					 }
-					 if(!medicine_detected)
-					 {
-						 HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
-						 openLoopTurning(1,180);
-						 toWard = 0;
-						 Dir = 'w';
-					 }
+				     if(MoveFlag)
+				    	 openLoopForward(regularVelocity,toBlockTime);
+				     if(!MoveFlag && medicine_detected==2)
+				     {
+				    	 HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
+				    	 openLoopTurning(1,180);
+				    	 toWard = 0;
+				    	 Dir = 'w';
+				     }
 				  }
-				 else if(Dir == 'w')
-				 {
-					 Set_TargetVelocity(regularVelocity,regularVelocity);
-					 if (cross_detected)
-					 {
-						 Pos = 'B';
-					 }
-				 }
+				  else if (Dir == 'w')
+				  {
+					  if(!MoveFlag)
+					  {
+						  DC_Start(0);
+						  Enable_CrossDetected();
+					  }
+					  if (cross_detected)
+					  {
+						  Pos = 'B';
+					  }
+				  }
 			  }
 			  break;
 		  case 'B':
@@ -563,11 +595,15 @@ Error_Handler();
 				  if (strlen(digitDetected) < 2)
 				  {
 					  DC_Stop();
-					  HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Recognize 2",strlen("Recognize 2"),HAL_MAX_DELAY);
+					  Require_Numbers(2);
 				  }
 				  else if (target != digitDetected[0] &&  target != digitDetected[1])
 				  {
-					  Set_TargetVelocity(regularVelocity,regularVelocity);
+					  if(!MoveFlag)
+					  {
+						  DC_Start(0);
+						  Enable_CrossDetected();
+					  }
 					  if(cross_detected)
 					  {
 						  actions[++action_index] = 0;
@@ -576,35 +612,46 @@ Error_Handler();
 				  }
 				  else if(target == digitDetected[0])
 				  {
-					  openLoopForward(regularVelocity,toCrossTime);
-					  openLoopTurning(-1,90);
+				      openLoopForward(regularVelocity,toCrossTime);
+
+					  if(!MoveFlag)
+					  {
+						  openLoopTurning(-1,90);
+						  Dir = 'w';
+					  }
 					  actions[++action_index] = -1;
-					  Dir = 'w';
 				  }
 				  else if(target == digitDetected[1])
 				  {
-					  openLoopForward(regularVelocity,toCrossTime);
-					  openLoopTurning(1,90);
+				      openLoopForward(regularVelocity,toCrossTime);
+
+					  if(!MoveFlag)
+					  {
+						  openLoopTurning(1,90);
+						  Dir = 'e';
+					  }
 					  actions[++action_index] = 1;
-					  Dir = 'e';
 				  }
 			  }
 			  else if(Dir == 'w')
 			  {
 				  if(toWard)
 				  {
-					  Set_TargetVelocity(regularVelocity,regularVelocity);
-					  if(cross_detected)
+					  if(!MoveFlag)
+					  {
+					    DC_Start(0);
+					    Enable_BlockDetected();
+					  }
+					  if(block_detected)
 					  {
 						  Pos = 'm';
+						  block_detected=0;
 					  }
 				  }
 				  else
 				  {
-					  if(MoveFlag)
-					  {
-						  openLoopForward(regularVelocity,toCrossTime);
-					  }
+				      openLoopForward(regularVelocity,toCrossTime);
+
 					  if(!MoveFlag)
 					  {
 						  openLoopTurning(-1,90);
@@ -616,18 +663,21 @@ Error_Handler();
 			  {
 				  if(toWard)
 				  {
-					  Set_TargetVelocity(regularVelocity,regularVelocity);
-					  if(cross_detected)
+					  if(!MoveFlag)
+					  {
+					    DC_Start(0);
+					    Enable_BlockDetected();
+					  }
+					  if(block_detected)
 					  {
 						  Pos = 'm';
+						  block_detected=0;
 					  }
 				  }
 				  else
 				  {
-					  if(MoveFlag)
-					  {
-						  openLoopForward(regularVelocity,toCrossTime);
-					  }
+				      openLoopForward(regularVelocity,toCrossTime);
+
 					  if(!MoveFlag)
 					  {
 						  openLoopTurning(1,90);
@@ -637,13 +687,17 @@ Error_Handler();
 			  }
 			  else if(Dir == 's')
 			  {
-
-				  Set_TargetVelocity(regularVelocity,regularVelocity);
-				  if (cross_detected)
+				  if(!MoveFlag)
 				  {
-					  action_index--;
-					  Pos = 'A';
+					DC_Start(0);
+					Enable_BlockDetected();
 				  }
+				  if(block_detected)
+				  {
+					  Pos = '0';
+					  block_detected=0;
+				  }
+
 			  }
 			  break;
 		  case 'C':
@@ -652,39 +706,51 @@ Error_Handler();
 				  if (strlen(digitDetected) < 4)
 				  {
 					  DC_Stop();
-					  HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Recognize 4",strlen("Recognize 4"),HAL_MAX_DELAY);
+					  Require_Numbers(4);
 				  }
+
 				  else if(target == digitDetected[0] || target == digitDetected[1])
 				  {
-					  openLoopForward(regularVelocity,toCrossTime);
-					  openLoopTurning(-1,90);
+				      openLoopForward(regularVelocity,toCrossTime);
+
+					  if(!MoveFlag)
+					  {
+						  openLoopTurning(-1,90);
+						  Dir = 'w';
+					  }
 					  actions[++action_index] = -1;
-					  Dir = 'w';
 				  }
-				  else if(target == digitDetected[2] || target == digitDetected[3])
+				  else if(target == digitDetected[1] || target==digitDetected[2])
 				  {
-					  openLoopForward(regularVelocity,toCrossTime);
-					  openLoopTurning(1,90);
+				      openLoopForward(regularVelocity,toCrossTime);
+
+					  if(!MoveFlag)
+					  {
+						  openLoopTurning(1,90);
+						  Dir = 'e';
+					  }
 					  actions[++action_index] = 1;
-					  Dir = 'e';
 				  }
 			  }
 			  else if(Dir == 'w')
 			  {
 				  if(toWard)
 				  {
-					  Set_TargetVelocity(regularVelocity,regularVelocity);
+					  if(!MoveFlag)
+					  {
+					    DC_Start(0);
+					    Enable_CrossDetected();
+					  }
 					  if(cross_detected)
 					  {
 						  Pos = 'D';
+						  cross_detected=0;
 					  }
 				  }
 				  else
 				  {
-					  if(MoveFlag)
-					  {
-						  openLoopForward(regularVelocity,toCrossTime);
-					  }
+				      openLoopForward(regularVelocity,toCrossTime);
+
 					  if(!MoveFlag)
 					  {
 						  openLoopTurning(-1,90);
@@ -696,18 +762,21 @@ Error_Handler();
 			  {
 				  if(toWard)
 				  {
-					  Set_TargetVelocity(regularVelocity,regularVelocity);
+					  if(!MoveFlag)
+					  {
+					    DC_Start(0);
+					    Enable_CrossDetected();
+					  }
 					  if(cross_detected)
 					  {
 						  Pos = 'E';
+						  cross_detected=0;
 					  }
 				  }
 				  else
 				  {
-					  if(MoveFlag)
-					  {
-						  openLoopForward(regularVelocity,toCrossTime);
-					  }
+				      openLoopForward(regularVelocity,toCrossTime);
+
 					  if(!MoveFlag)
 					  {
 						  openLoopTurning(1,90);
@@ -717,56 +786,73 @@ Error_Handler();
 			  }
 			  else if(Dir == 's')
 			  {
-				  Set_TargetVelocity(regularVelocity,regularVelocity);
-				  if (cross_detected)
+				  if(!MoveFlag)
 				  {
-					  action_index--;
-					  Pos = 'B';
+					DC_Start(0);
+					Enable_BlockDetected();
+				  }
+				  if(block_detected)
+				  {
+					  Pos = '0';
+					  block_detected=0;
 				  }
 			  }
+			  break;
 		  case 'D':
 			  if(Dir == 'w')
 			  {
 				  if (strlen(digitDetected) < 2)
 				  {
 					  DC_Stop();
-					  HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Recognize 2",strlen("Recognize 2"),HAL_MAX_DELAY);
+					  Require_Numbers(2);
 				  }
+
 				  else if(target == digitDetected[0])
 				  {
-					  openLoopForward(regularVelocity,toCrossTime);
-					  openLoopTurning(-1,90);
+				      openLoopForward(regularVelocity,toCrossTime);
+
+					  if(!MoveFlag)
+					  {
+						  openLoopTurning(-1,90);
+						  Dir = 's';
+					  }
 					  actions[++action_index] = -1;
-					  Dir = 's';
 				  }
 				  else if(target == digitDetected[1])
 				  {
-					  openLoopForward(regularVelocity,toCrossTime);
-					  openLoopTurning(1,90);
+				      openLoopForward(regularVelocity,toCrossTime);
+
+					  if(!MoveFlag)
+					  {
+						  openLoopTurning(1,90);
+						  Dir = 'n';
+					  }
 					  actions[++action_index] = 1;
-					  Dir = 'n';
 				  }
 			  }
 			  else if(Dir == 's')
 			  {
 				  if(toWard)
 				  {
-					  Set_TargetVelocity(regularVelocity,regularVelocity);
-					  if(cross_detected)
+					  if(!MoveFlag)
+					  {
+					    DC_Start(0);
+					    Enable_BlockDetected();
+					  }
+					  if(block_detected)
 					  {
 						  Pos = 'l';
+						  block_detected=0;
 					  }
 				  }
 				  else
 				  {
-					  if(MoveFlag)
-					  {
-						  openLoopForward(regularVelocity,toCrossTime);
-					  }
+				      openLoopForward(regularVelocity,toCrossTime);
+
 					  if(!MoveFlag)
 					  {
 						  openLoopTurning(-1,90);
-						  Dir = 'e';
+						  Dir = 'n';
 					  }
 				  }
 			  }
@@ -774,33 +860,39 @@ Error_Handler();
 			  {
 				  if(toWard)
 				  {
-					  Set_TargetVelocity(regularVelocity,regularVelocity);
-					  if(cross_detected)
+					  if(!MoveFlag)
+					  {
+					    DC_Start(0);
+					    Enable_BlockDetected();
+					  }
+					  if(block_detected)
 					  {
 						  Pos = 'l';
+						  block_detected=0;
 					  }
 				  }
 				  else
 				  {
-					  if(MoveFlag)
-					  {
-						  openLoopForward(regularVelocity,toCrossTime);
-					  }
+				      openLoopForward(regularVelocity,toCrossTime);
+
 					  if(!MoveFlag)
 					  {
 						  openLoopTurning(1,90);
-						  Dir = 'e';
+						  Dir = 's';
 					  }
 				  }
 			  }
 			  else if(Dir == 'e')
 			  {
-
-				  Set_TargetVelocity(regularVelocity,regularVelocity);
-				  if (cross_detected)
+				  if(!MoveFlag)
 				  {
-					  action_index--;
+					DC_Start(0);
+					Enable_BlockDetected();
+				  }
+				  if(block_detected)
+				  {
 					  Pos = 'C';
+					  block_detected=0;
 				  }
 			  }
 			  break;
@@ -809,21 +901,23 @@ Error_Handler();
 			  {
 				  if(Dir == 's')
 				  {
-					 if(MoveFlag)
-					 {
-						 openLoopForward(regularVelocity,toBlackTime);
-					 }
-					 if(!medicine_detected)
-					 {
-						 HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
-						 openLoopTurning(1,180);
-						 toWard = 0;
-						 Dir = 'n';
-					 }
+				     if(MoveFlag)
+				    	 openLoopForward(regularVelocity,toBlockTime);
+				     if(!MoveFlag && medicine_detected==2)
+				     {
+				    	 HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
+				    	 openLoopTurning(1,180);
+				    	 toWard = 0;
+				    	 Dir = 'n';
+				     }
 				  }
 				  else if (Dir == 'n')
 				  {
-					  Set_TargetVelocity(regularVelocity,regularVelocity);
+					  if(!MoveFlag)
+					  {
+						  DC_Start(0);
+						  Enable_CrossDetected();
+					  }
 					  if (cross_detected)
 					  {
 						  Pos = 'D';
@@ -834,158 +928,182 @@ Error_Handler();
 			  {
 				  if(Dir == 'n')
 				  {
-					 if(MoveFlag)
-					 {
-						 openLoopForward(regularVelocity,toBlackTime);
-					 }
-					 if(!medicine_detected)
-					 {
-						 HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
-						 openLoopTurning(1,180);
-						 toWard = 0;
-						 Dir = 's';
-					 }
+				     if(MoveFlag)
+				    	 openLoopForward(regularVelocity,toBlockTime);
+				     if(!MoveFlag && medicine_detected==2)
+				     {
+				    	 HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
+				    	 openLoopTurning(1,180);
+				    	 toWard = 0;
+				    	 Dir = 's';
+				     }
 				  }
-				 else if(Dir == 's')
-				 {
-					 Set_TargetVelocity(regularVelocity,regularVelocity);
-					 if (cross_detected)
-					 {
-						 Pos = 'D';
-					 }
-				 }
+				  else if (Dir == 's')
+				  {
+					  if(!MoveFlag)
+					  {
+						  DC_Start(0);
+						  Enable_CrossDetected();
+					  }
+					  if (cross_detected)
+					  {
+						  Pos = 'D';
+					  }
+				  }
 			  }
 			  break;
 		  case 'E':
-			  if(Dir == 'w')
+			  if(Dir == 'e')
 			  {
 				  if (strlen(digitDetected) < 2)
 				  {
 					  DC_Stop();
-					  HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Recognize 2",strlen("Recognize 2"),HAL_MAX_DELAY);
+					  Require_Numbers(2);
 				  }
+
 				  else if(target == digitDetected[0])
 				  {
-					  openLoopForward(regularVelocity,toCrossTime);
-					  openLoopTurning(-1,90);
+				      openLoopForward(regularVelocity,toCrossTime);
+
+					  if(!MoveFlag)
+					  {
+						  openLoopTurning(-1,90);
+						  Dir = 'n';
+					  }
 					  actions[++action_index] = -1;
-					  Dir = 'n';
 				  }
 				  else if(target == digitDetected[1])
 				  {
-					  openLoopForward(regularVelocity,toCrossTime);
-					  openLoopTurning(1,90);
-					  actions[++action_index] = 1;
-					  Dir = 's';
-				  }
-			  }
-			  else if(Dir == 's')
-			  {
-				  if(toWard)
-				  {
-					  Set_TargetVelocity(regularVelocity,regularVelocity);
-					  if(cross_detected)
-					  {
-						  Pos = 'r';
-					  }
-				  }
-				  else
-				  {
-					  if(MoveFlag)
-					  {
-						  openLoopForward(regularVelocity,toCrossTime);
-					  }
+				      openLoopForward(regularVelocity,toCrossTime);
+
 					  if(!MoveFlag)
 					  {
 						  openLoopTurning(1,90);
-						  Dir = 'w';
+						  Dir = 's';
 					  }
+					  actions[++action_index] = 1;
 				  }
 			  }
 			  else if(Dir == 'n')
 			  {
 				  if(toWard)
 				  {
-					  Set_TargetVelocity(regularVelocity,regularVelocity);
-					  if(cross_detected)
+					  if(!MoveFlag)
+					  {
+					    DC_Start(0);
+					    Enable_BlockDetected();
+					  }
+					  if(block_detected)
 					  {
 						  Pos = 'r';
+						  block_detected=0;
 					  }
 				  }
 				  else
 				  {
-					  if(MoveFlag)
-					  {
-						  openLoopForward(regularVelocity,toCrossTime);
-					  }
+				      openLoopForward(regularVelocity,toCrossTime);
+
 					  if(!MoveFlag)
 					  {
 						  openLoopTurning(-1,90);
-						  Dir = 'w';
+						  Dir = 's';
+					  }
+				  }
+			  }
+			  else if(Dir == 's')
+			  {
+				  if(toWard)
+				  {
+					  if(!MoveFlag)
+					  {
+					    DC_Start(0);
+					    Enable_BlockDetected();
+					  }
+					  if(block_detected)
+					  {
+						  Pos = 'r';
+						  block_detected=0;
+					  }
+				  }
+				  else
+				  {
+				      openLoopForward(regularVelocity,toCrossTime);
+
+					  if(!MoveFlag)
+					  {
+						  openLoopTurning(1,90);
+						  Dir = 'n';
 					  }
 				  }
 			  }
 			  else if(Dir == 'w')
 			  {
-
-				  Set_TargetVelocity(regularVelocity,regularVelocity);
-				  if (cross_detected)
+				  if(!MoveFlag)
 				  {
-					  action_index--;
+					DC_Start(0);
+					Enable_BlockDetected();
+				  }
+				  if(block_detected)
+				  {
 					  Pos = 'C';
+					  block_detected=0;
 				  }
 			  }
 			  break;
 		  case 'r':
-			  if (actions[action_index] == -1)
+			  if (actions[action_index] == 1)
 			  {
-				  if(Dir == 'n')
+				  if(Dir == 's')
 				  {
-					 if(MoveFlag)
-					 {
-						 openLoopForward(regularVelocity,toBlackTime);
-					 }
-					 if(!medicine_detected)
-					 {
-						 HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
-						 openLoopTurning(1,180);
-						 toWard = 0;
-						 Dir = 's';
-					 }
+				     if(MoveFlag)
+				    	 openLoopForward(regularVelocity,toBlockTime);
+				     if(!MoveFlag && medicine_detected==2)
+				     {
+				    	 HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
+				    	 openLoopTurning(1,180);
+				    	 toWard = 0;
+				    	 Dir = 'n';
+				     }
 				  }
-				  else if (Dir == 's')
+				  else if (Dir == 'n')
 				  {
-					  Set_TargetVelocity(regularVelocity,regularVelocity);
+					  if(!MoveFlag)
+					  {
+						  DC_Start(0);
+						  Enable_CrossDetected();
+					  }
 					  if (cross_detected)
 					  {
 						  Pos = 'E';
 					  }
 				  }
 			  }
-			  else if (actions[action_index] == 1)
+			  else if (actions[action_index] == -1)
 			  {
-				  if(Dir == 's')
+				  if(Dir == 'n')
 				  {
-					 if(MoveFlag)
-					 {
-						 openLoopForward(regularVelocity,toBlackTime);
-					 }
-					 if(!medicine_detected)
-					 {
-						 HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
-						 openLoopTurning(1,180);
-						 toWard = 0;
-						 Dir = 'n';
-					 }
+				     if(MoveFlag)
+				    	 openLoopForward(regularVelocity,toBlockTime);
+				     if(!MoveFlag && medicine_detected==2)
+				     {
+				    	 HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
+				    	 openLoopTurning(1,180);
+				    	 toWard = 0;
+				    	 Dir = 's';
+				     }
 				  }
-				 else if(Dir == 'n')
-				 {
-					 Set_TargetVelocity(regularVelocity,regularVelocity);
-					 if (cross_detected)
-					 {
-						 Pos = 'E';
-					 }
-				 }
+				  else if (Dir == 's')
+				  {
+					  if(!MoveFlag)
+					  {
+						  DC_Start(0);
+						  Enable_CrossDetected();
+					  }
+					  if (cross_detected)
+					  {
+						  Pos = 'E';
+					  }
+				  }
 			  }
 			  break;
 			}
@@ -1079,7 +1197,20 @@ Error_Handler();
 				   openLoopTurning(1, 180);
 				   Touch_pannel_Uart2_RxBuffer[1] = 0x0;
 				   break;
-
+				//开始执行任务时，向单片机发送识别一个数字的请求
+			   case 0x20:
+				   Require_Numbers(1);
+				   break;
+				//模拟药物装上
+			   case 0x21:
+				   medicine_detected=1;
+				   Touch_pannel_Uart2_RxBuffer[1] = 0x0;
+				   break;
+				//模拟药物卸下
+			   case 0x22:
+				   medicine_detected=2;
+				   Touch_pannel_Uart2_RxBuffer[1] = 0x0;
+				   break;
    		   default:
 
    			 break;
@@ -1087,22 +1218,66 @@ Error_Handler();
    		Touch_pannel_receive_completed =0;
    	}
 
+	   //与k230通信
+	   	if(PiRxStrFlag==1)
+	   	{
+            uint8_t Num1=0,Num2=0,Num3=0,Num4=0;
+            uint8_t TempCx=0;
+            //识别到一个数字
+			if(sscanf((const char *)&PiRxStrBuf,"detect one number: %d",Num1)==1)
+			{
+				target='0'+Num1;//记录当前要去的病房号
+			}
+			//识别到两个数字
+			else if(sscanf((const char *)&PiRxStrBuf,"detect two numbers: %d %d",Num1,Num2)==2)
+			{
+				digitDetected[0]='0'+Num1;
+				digitDetected[1]='0'+Num2;
+				digitDetected[2]='\0';
+			}
+            //识别到四个数字
+			else if(sscanf((const char *)&PiRxStrBuf,"detect two numbers: %d %d %d %d",Num1,Num2,Num3,Num4)==4)
+			{
+				digitDetected[0]='0'+Num1;
+				digitDetected[1]='0'+Num2;
+				digitDetected[2]='0'+Num3;
+				digitDetected[3]='0'+Num4;
+				digitDetected[4]='\0';
+			}
+			else if(strcmp(&PiRxStrBuf,"Hello From K230!")==0)//车辆停转
+			{
+			  HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"Hello From STM32\r\n",strlen("Hello From STM32\r\n"),HAL_MAX_DELAY);
+			}
+			//识别到交叉路口
+			else if(strcmp(&PiRxStrBuf,"detect cross")==0)//车辆停转
+			{
+			   cross_detected=1;
+			}
+			//识别到巡线信息
+			else if(sscanf((const char *)&PiRxStrBuf,"cx: %d",TempCx)==1)
+			{
+               Angle_PID_SetTargetX(TempCx);
+               Angle_PID_Update();
+			}
+			PiRxStrFlag=0;
+		}
+
+
 
 	if(Velocity_Plot_Indicate==1)
    {
 	 Velocity_Plot();
    }
 
-	Angle_PID_Update(); // 巡线更新
+
 
     if(MoveFlag==1 && Velocity_PID_UpdateFlag==1)
     {
     	Velocity_PID_UpdateFlag=0;
     	GetVelocity();//更新左右轮转�????????
-    	if(MoveFlag)
-          Velocity_Update();//速度PID控制
-
+       Velocity_PID_Update();//速度PID控制
     }
+
 	 if( TurnStopFlag==1)
 	 {
 		  TurnCnt=0;
@@ -1297,24 +1472,24 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	        }
 	}
 	//和stm32通信（与树莓派间接�?�信�???????????????
-//	if(huart==&hlpuart1)
-//	{
-//		if(PiRxChar=='\r')
-//		{
-//
-//		}
-//		else if(PiRxChar=='\n')
-//		{
-//			PiRxStrBuf[PiRxCharIdx++]='\0';
-//			PiRxCharIdx=0;
-//			PiRxStrFlag=1;
-//		}
-//		else
-//		{
-//			PiRxStrBuf[PiRxCharIdx++]=PiRxChar;
-//		}
-//		HAL_UART_Receive_IT(&hlpuart1,&PiRxChar,1);//重新使能接收中断
-//	}
+	if(huart==&hlpuart1)
+	{
+		if(PiRxChar=='\r')
+		{
+
+		}
+		else if(PiRxChar=='\n')
+		{
+			PiRxStrBuf[PiRxCharIdx++]='\0';
+			PiRxCharIdx=0;
+			PiRxStrFlag=1;
+		}
+		else
+		{
+			PiRxStrBuf[PiRxCharIdx++]=PiRxChar;
+		}
+		HAL_UART_Receive_IT(&hlpuart1,&PiRxChar,1);//重新使能接收中断
+	}
 }
 
 
@@ -1416,55 +1591,109 @@ uint8_t OpenTurn(uint8_t dir, uint8_t angle)
 
 void openLoopTurning(uint8_t clockwise,uint8_t angle)
 {
-	//启动两路pwm输出
-	HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_1);
-	HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_3);
-	__HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,0);
-	__HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_3,0);
+    uint16_t TurnCnt=0;
+    uint16_t TurnPeriod=0;
 	if(clockwise > 0)//右转
 	{
 		if(angle == 90)
 		{
-			BL_SetVelocity(0.2);
-			BR_SetVelocity(-0.2);
-			HAL_Delay(900); // Delay为延时的毫秒数（ms）
-			DC_Stop();
+            DC_Start(1);
+			TurnPeriod=1000;
 		}
 		if(angle == 180)
 		{
-			BL_SetVelocity(0.2);
-			BR_SetVelocity(-0.2);
-			HAL_Delay(1800); // Delay为延时的毫秒数（ms）
-			DC_Stop();
+			DC_Start(1);
+			TurnPeriod=2000;
 		}
 	}
 	else
 	{
 		if(angle == 90)
 		{
-			BL_SetVelocity(-0.2);
-			BR_SetVelocity(0.2);
-			HAL_Delay(900); // Delay为延时的毫秒数（ms）
-			DC_Stop();
+			DC_Start(2);
+			TurnPeriod=1000;
 		}
 		if(angle == 180)
 		{
-			BL_SetVelocity(-0.2);
-			BR_SetVelocity(0.2);
-			HAL_Delay(1800); // Delay为延时的毫秒数（ms）
-			DC_Stop();
+			DC_Start(2);
+			TurnPeriod=2000;
 		}
 	}
+	while(TurnCnt++<=TurnPeriod)
+	{
+		//速度pid更新
+	    if(MoveFlag==1 && Velocity_PID_UpdateFlag==1)
+	    {
+	    	Velocity_PID_UpdateFlag=0;
+	    	GetVelocity();//更新左右轮转�????????
+	       Velocity_PID_Update();//速度PID控制
+	    }
+	}
+	DC_Stop();
 }
 
 void openLoopForward(uint8_t forwardVelocity, uint8_t forwardTime)
 {
+	if(MoveFlag==0)
+	{
+		DC_Start(0);//启动电机
+	}
+	uint16_t forwardCnt=0;
+	uint16_t forwardPeriod=forwardTime;
+	while(forwardCnt++<=forwardPeriod)
+	{
+		//速度pid更新
+	    if(MoveFlag==1 && Velocity_PID_UpdateFlag==1)
+	    {
+	    	Velocity_PID_UpdateFlag=0;
+	    	GetVelocity();//更新左右轮转�????????
+	       Velocity_PID_Update();//速度PID控制
+	    }
+
+	    //角度pid更新
+	   	if(PiRxStrFlag==1)
+	   	{
+
+            uint8_t TempCx=0;
+			//识别到巡线信息
+			if(sscanf((const char *)&PiRxStrBuf,"cx: %d",TempCx)==1)
+			{
+               Angle_PID_SetTargetX(TempCx);
+               Angle_PID_Update();
+			}
+			PiRxStrFlag=0;
+		}
+	}
+
+
+	DC_Stop();
+	/*
 	BL_SetVelocity(forwardVelocity);
 	BR_SetVelocity(forwardVelocity);
 	HAL_Delay(forwardTime);
 	DC_Stop();
+	*/
 }
 
+void Enable_CrossDetected(void)
+{
+	  HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"enable cross detected\r\n",strlen("enable cross detected\r\n"),HAL_MAX_DELAY);//等待交叉路口检测
+}
+
+void Enable_BlockDetected(void)
+{
+	  HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"enable block detected\r\n",strlen("enable block detected\r\n"),HAL_MAX_DELAY);//等待交叉路口检测
+}
+
+void Require_Numbers(uint8_t num)
+{
+  if(num==1)
+	  HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"detect one number\r\n",strlen("detect one number\r\n"),HAL_MAX_DELAY);//识别一个数字
+  else if(num==2)
+	  HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"detect two numbers\r\n",strlen("detect two numbers\r\n"),HAL_MAX_DELAY);//识别两个数字
+  else if(num==4)
+	  HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"detect four numbers\r\n",strlen("detect four numbers\r\n"),HAL_MAX_DELAY);//识别四个数字
+}
 
 
 /* USER CODE END 4 */

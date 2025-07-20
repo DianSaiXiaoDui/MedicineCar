@@ -34,7 +34,7 @@ void Turn(int8_t dir,uint16_t angle);
 void DC_Forward(float Distance,uint8_t inf);//前进
 void DC_Backward(float Distance,uint8_t inf);//后退
 void DC_Stop(void);//电机停止转动
-
+void DC_Start(uint8_t dir);//电机启动
 
 
 #endif /* INC_DC_H_ */
