@@ -1,6 +1,6 @@
 ################################################################################
 # Automatically-generated file. Do not edit!
-# Toolchain: GNU Tools for STM32 (11.3.rel1)
+# Toolchain: GNU Tools for STM32 (13.3.rel1)
 ################################################################################
 
 -include ../makefile.init
@@ -61,8 +61,8 @@ all: main-build
 main-build: SmartCar_CM7.elf secondary-outputs
 
 # Tool invocations
-SmartCar_CM7.elf SmartCar_CM7.map: $(OBJS) $(USER_OBJS) D:\Desktop\Desktop2\stm32cube_workspace\SmartCar\CM7\STM32H745ZITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "SmartCar_CM7.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"D:\Desktop\Desktop2\stm32cube_workspace\SmartCar\CM7\STM32H745ZITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="SmartCar_CM7.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+SmartCar_CM7.elf SmartCar_CM7.map: $(OBJS) $(USER_OBJS) C:\Users\ydx\OneDrive\桌面\electronic\ design\ contest\MedicineCar\CM7\STM32H745ZITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "SmartCar_CM7.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"C:\Users\ydx\OneDrive\桌面\electronic design contest\MedicineCar\CM7\STM32H745ZITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="SmartCar_CM7.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
