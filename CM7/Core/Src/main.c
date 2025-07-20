@@ -199,7 +199,7 @@ void MoveTrack1(void);//运动轨迹1：A-O-B
 void MoveTrack2(void);//运动轨迹2：A-O-C
 uint8_t OpenForward();
 uint8_t OpenTurn(uint8_t, uint8_t);
-void openLoopTurning(uint8_t clockwise,uint8_t angle);
+void openLoopTurning(int8_t clockwise,uint16_t angle);
 void openLoopForward(uint8_t forwardVelocity, uint8_t forwardTime);
 void Enable_CrossDetected(void);
 void Enable_BlockDetected(void);
@@ -306,7 +306,7 @@ Error_Handler();
   HAL_UART_Transmit(&hlpuart1,(const uint8_t *)"hi1\r\n",strlen("hi1\r\n"),HAL_MAX_DELAY);
   uint8_t lock=0;
   uint8_t Movelock=0;
-  TestStage='V';
+  TestStage='1';
 
 
   //使能串口2中断
@@ -326,14 +326,14 @@ Error_Handler();
     /* USER CODE BEGIN 3 */
 
 	/*地图(数字1~8代表病房位置�???????????????????0是药房，字母代表交叉处，（字母）表示数字识别�???????????????????)
-	 *   7                         8
+	 *   l                         r
 	 *   |            C            |
 	 * D |   - - - - - - - - - -   | E
 	 *   |           |             |
-	 *   5           |             6
+	 *   l           |             r
 	 *               |
 	 *               | B
-     *     3 - - - - - - - - - 4
+     *     m - - - - - - - - - m
 	 *               |
 	 *               |
 	 *               |
@@ -347,6 +347,8 @@ Error_Handler();
 	 *
 	 * */
 		//基础部分运动逻辑状态转换机
+	  if(TestStage=='1')
+	  {
 		switch(Pos)
 		{
 		  case 'S':
@@ -1108,7 +1110,7 @@ Error_Handler();
 			  break;
 			}
 
-
+	  }
 
        /*
          if(MoveFlag==1 && Movelock==0)
@@ -1589,7 +1591,7 @@ uint8_t OpenTurn(uint8_t dir, uint8_t angle)
 }
 
 
-void openLoopTurning(uint8_t clockwise,uint8_t angle)
+void openLoopTurning(int8_t clockwise,uint16_t angle)
 {
     uint16_t TurnCnt=0;
     uint16_t TurnPeriod=0;
@@ -1626,7 +1628,7 @@ void openLoopTurning(uint8_t clockwise,uint8_t angle)
 	    {
 	    	Velocity_PID_UpdateFlag=0;
 	    	GetVelocity();//更新左右轮转�????????
-	       Velocity_PID_Update();//速度PID控制
+	        Velocity_PID_Update();//速度PID控制
 	    }
 	}
 	DC_Stop();
