@@ -1,5 +1,5 @@
 Core/Src/Angle_PID.o: ../Core/Src/Angle_PID.c ../Core/Inc/Angle_PID.h \
- ../Core/Inc/CCD.h ../Core/Inc/main.h \
+ ../Core/Inc/main.h \
  ../../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal.h \
  ../Core/Inc/stm32h7xx_hal_conf.h \
  ../../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_rcc.h \
@@ -37,12 +37,12 @@ Core/Src/Angle_PID.o: ../Core/Src/Angle_PID.c ../Core/Inc/Angle_PID.h \
  ../../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_tim_ex.h \
  ../../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart.h \
  ../../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart_ex.h \
+ ../Core/Inc/CCD.h ../Core/Inc/dwt_delay.h ../Core/Inc/adc.h \
  ../Core/Inc/servo.h ../Core/Inc/tim.h ../Core/Inc/DC.h \
  ../Core/Inc/Velocity_PID.h ../Core/Inc/Angle_PID.h \
  ../Core/Inc/Location_PID.h ../Core/Inc/24l01.h ../Core/Inc/spi.h \
- ../Core/Inc/dwt_delay.h ../Core/Inc/adc.h ../Core/Inc/Velocity_PID.h
+ ../Core/Inc/Velocity_PID.h
 ../Core/Inc/Angle_PID.h:
-../Core/Inc/CCD.h:
 ../Core/Inc/main.h:
 ../../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal.h:
 ../Core/Inc/stm32h7xx_hal_conf.h:
@@ -81,6 +81,9 @@ Core/Src/Angle_PID.o: ../Core/Src/Angle_PID.c ../Core/Inc/Angle_PID.h \
 ../../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_tim_ex.h:
 ../../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart.h:
 ../../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart_ex.h:
+../Core/Inc/CCD.h:
+../Core/Inc/dwt_delay.h:
+../Core/Inc/adc.h:
 ../Core/Inc/servo.h:
 ../Core/Inc/tim.h:
 ../Core/Inc/DC.h:
@@ -89,6 +92,4 @@ Core/Src/Angle_PID.o: ../Core/Src/Angle_PID.c ../Core/Inc/Angle_PID.h \
 ../Core/Inc/Location_PID.h:
 ../Core/Inc/24l01.h:
 ../Core/Inc/spi.h:
-../Core/Inc/dwt_delay.h:
-../Core/Inc/adc.h:
 ../Core/Inc/Velocity_PID.h:

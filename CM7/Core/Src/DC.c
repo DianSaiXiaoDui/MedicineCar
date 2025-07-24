@@ -46,23 +46,26 @@ void BL_SetVelocity(float BL_ratio)
    else if(BL_ratio<0)
        BL_dir=0;//反转
 
-    /*正转驱动*/
-    if(BL_dir>0)
-    {
-        __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,(uint16_t)(BL_ratio*DC_ARR));//设置PWM占空比BL_ratio
-        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);   //AIN2=0
-    	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);
-    	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_RESET);
-    }
+	/*正转驱动*/
+	if(BL_dir>0)
+	{
+		__HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,(uint16_t)(BL_ratio*DC_ARR));//设置PWM占空比BL_ratio
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);   //AIN2=0
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_RESET);
+	}
 
-    /*反转驱动*/
-    else
-    {
-        __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,(uint16_t)((1-(-BL_ratio))*DC_ARR));//设置PWM占空比BL_ratio
-        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1,GPIO_PIN_SET);   //AIN2= 1
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_SET);
-    }
+	/*反转驱动*/
+	else
+	{
+		__HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,(uint16_t)((1-(-BL_ratio))*DC_ARR));//设置PWM占空比BL_ratio
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1,GPIO_PIN_SET);   //AIN2= 1
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_SET);
+	}
+
+
+
 }
 
 //右后轮设置速度
@@ -82,23 +85,26 @@ void BR_SetVelocity(float BR_ratio)
    else if(BR_ratio<0)
        BR_dir=0;//反转
 
-    /*正转驱动*/
-    if(BR_dir>0)
-    {
-        __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_3,(uint16_t)(BR_ratio*DC_ARR));//设置PWM占空比BL_ratio
-        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);   //AIN4=0
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_RESET);
-    }
 
-    /*反转驱动*/
-    else
-    {
-        __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_3,(uint16_t)((1-(-BR_ratio))*DC_ARR));//设置PWM占空比BL_ratio
-        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);   //AIN4= 1
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_SET);
-    }
+	/*正转驱动*/
+	if(BR_dir>0)
+	{
+		__HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_3,(uint16_t)(BR_ratio*DC_ARR));//设置PWM占空比BL_ratio
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);   //AIN4=0
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_RESET);
+	}
+
+	/*反转驱动*/
+	else
+	{
+		__HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_3,(uint16_t)((1-(-BR_ratio))*DC_ARR));//设置PWM占空比BL_ratio
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);   //AIN4= 1
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_SET);
+	}
+
+
 }
 
 //设置速度
@@ -137,8 +143,17 @@ void SetVelocity(float BL_ratio,float BR_ratio)
 			BR_SetVelocity(BR_ratio);
 		}
 		*/
-		BL_SetVelocity(BL_ratio);
-	    BR_SetVelocity(BR_ratio);
+		if (currentDriveMode == REARDRIVEMODE)
+		{
+			BL_SetVelocity(BL_ratio);
+			BR_SetVelocity(BR_ratio);
+		}
+		else
+		{
+			BL_SetVelocity(-BR_ratio);
+			BR_SetVelocity(-BL_ratio);
+		}
+
 	}
 }
 
@@ -162,8 +177,17 @@ void GetVelocity(void)
    __HAL_TIM_SET_COUNTER(&htim8,0);
 
    //将计数器值转化为移动距离（cm）
-   delta_distance_BL_cm=delta_distance_BL*dpp;
-   delta_distance_BR_cm=delta_distance_BR*dpp;
+   if (currentDriveMode == REARDRIVEMODE)
+   {
+	   delta_distance_BL_cm=delta_distance_BL*dpp;
+	   delta_distance_BR_cm=delta_distance_BR*dpp;
+   }
+   else
+   {
+	   delta_distance_BL_cm=-delta_distance_BR*dpp;
+	   delta_distance_BR_cm=-delta_distance_BL*dpp;
+   }
+
 
    //计算一个测速周期内的速度
    v_BL=delta_distance_BL_cm/(T_velocity/1000.0);

@@ -168,6 +168,8 @@ uint8_t LoopStart = 0; // 是否是一次新的开环走+旋转
 
 
 
+drive_mode currentDriveMode = REARDRIVEMODE;
+
 uint8_t DistanceFlag=0;
 float TargetDistance=0;
 uint8_t StraightStopFlag=0;
@@ -1173,29 +1175,29 @@ Error_Handler();
    	      //模式切换:单车模式
    		   case 0x01:
 //   			  Mode=1;
-   			  //发�?�命令给树莓派，准备识别�???????????????????个数�???????????????????
+   			  //发命令给K230，准备识别
    			  HAL_UART_Transmit(&hlpuart1,"Recognize One Number",strlen("Recognize One Number"),HAL_MAX_DELAY);
    			  HAL_UART_Transmit(&hlpuart1,"Green Light Off",strlen("Green Light Off"),HAL_MAX_DELAY);//熄灭上一次任务完成后点亮的绿�???????????????????
    			  Touch_pannel_Uart2_RxBuffer[1] = 0x0;
    			  break;
-   	      //模式切换:双车模式1（拓展题1�???????????????????
+   	      //模式切换:双车模式1（拓展题1
    		   case 0x02:
 //   			  Mode=2;
    			  Touch_pannel_Uart2_RxBuffer[1] = 0x0;
    			  break;
-   	     //模式切换:双车模式2（拓展题2�???????????????????
+   	     //模式切换:双车模式2（拓展题2
 			   case 0x03:
 //				  Mode=3;
 				  Touch_pannel_Uart2_RxBuffer[1] = 0x0;
 				  break;
-		     //车前进（有�?�度pid�????????
+		     //车前进
 			   case 0x11:
 				  //DC_Forward(90,0);
 				  openLoopForward(regularVelocity,toBlockTime);
 				  Touch_pannel_Uart2_RxBuffer[1] = 0x0;
 
 				  break;
-			 //车后�????????（有速度pid�????????
+			 //车后退
 			   case 0x12:
 				   DC_Backward(0,1);
 				   Touch_pannel_Uart2_RxBuffer[1] = 0x0;

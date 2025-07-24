@@ -212,8 +212,17 @@ void Set_BR_TargetVelocity(float v)
 
 void Set_TargetVelocity(float vl,float vr)
 {
-	BL_Velocity_PID.TargetVelocity=vl;
-	BR_Velocity_PID.TargetVelocity=vr;
+	if (currentDriveMode == REARDRIVEMODE)
+	{
+		BL_Velocity_PID.TargetVelocity=vl;
+		BR_Velocity_PID.TargetVelocity=vr;
+	}
+	else
+	{
+		BL_Velocity_PID.TargetVelocity=-vr;
+		BR_Velocity_PID.TargetVelocity=-vl;
+	}
+
 }
 
 float Get_BL_TargetVelocity()

@@ -120,6 +120,8 @@ extern uint32_t TurnPeriod;
 extern uint8_t DistanceFlag;
 extern uint8_t StraightStopFlag;
 extern float TargetDistance;
+typedef enum { FRONTDRIVEMODE,REARDRIVEMODE } drive_mode;
+extern drive_mode currentDriveMode;
 
 void clip(float* val,float min,float max);//限幅函数
 void Velocity_Plot(void);//绘制速度波形

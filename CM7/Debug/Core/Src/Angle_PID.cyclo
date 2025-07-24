@@ -1,5 +1,5 @@
 ../Core/Src/Angle_PID.c:11:6:Angle_PID_Init	1
 ../Core/Src/Angle_PID.c:34:6:Angle_PID_Control	5
 ../Core/Src/Angle_PID.c:79:6:Angle_PID_Reset	1
-../Core/Src/Angle_PID.c:84:6:Angle_PID_SetTargetX	1
+../Core/Src/Angle_PID.c:84:6:Angle_PID_SetCurX	1
 ../Core/Src/Angle_PID.c:89:6:Angle_PID_Update	1
