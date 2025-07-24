@@ -33,6 +33,7 @@
 #include "string.h"
 #include "stdio.h"
 #include "stdlib.h"
+//#include "CCD.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -65,10 +66,10 @@ uint8_t actionLock = 0;
 float v_BL;//左后轮�?�度 cm/s
 float v_BR;//右后轮�?�度 cm/s
 float v_C;//车整体�?�度 cm/s
-float TotalDistance;//小车从某时刻�???????????????????????????始的总距�??????????????????????????? cm
-uint16_t T_velocity=20;//测�?�周�???????????????????????????(PID调控周期)，单位：ms
+float TotalDistance;//小车从某时刻�?????????????????????????????始的总距�????????????????????????????? cm
+uint16_t T_velocity=20;//测�?�周�?????????????????????????????(PID调控周期)，单位：ms
 uint16_t T_location=100;
-uint8_t distance_flag=0;//�???????????????????????????始累积距离标�???????????????????????????
+uint8_t distance_flag=0;//�?????????????????????????????始累积距离标�?????????????????????????????
 uint8_t MoveFlag=0;
 uint8_t toWard = 1;
 uint8_t cross_detected = 0;
@@ -82,22 +83,22 @@ char Dir='n';//方向
 char Pos='S';//位置
 char action[20] = "stop";
 char digitDetected[20]= "";
-extern Angle_PID_Struct Angle_PID;//转向pid结构�???????????????????
+extern Angle_PID_Struct Angle_PID;//转向pid结构�?????????????????????
 extern BL_Velocity_PID_Struct BL_Velocity_PID;
 extern BR_Velocity_PID_Struct BR_Velocity_PID;
 
 //电机测试
 uint8_t VelocityMeasureFlag=0;
-//计时�???????????????????????
+//计时�?????????????????????????
 uint32_t Cnt_1ms=0;
 
-//串口�?????????????????????
+//串口�???????????????????????
 //Touch Pannel communication define
 uint8_t StartSTR[3]={0xff,0xff,0xff};
 uint8_t EndSTR[3]={0xff,0xff,0xff};
 uint8_t HeaderTxBuffer1[] = "cls BLACK";   //清屏命令
 uint8_t HeaderTxBuffer2[] = "page cube_aigc";  //跳转页面命令
-uint8_t HeaderTxBuffer3[] = "n0.val=";         //变量赋�?�命�?????????????????????
+uint8_t HeaderTxBuffer3[] = "n0.val=";         //变量赋�?�命�???????????????????????
 uint8_t HeaderTxBuffer4[20];  //white line
 uint8_t HeaderTxBuffer5[] = "add 1,2,";     //real time data
 uint8_t HeaderTxBuffer6[20];   //red line
@@ -125,13 +126,13 @@ uint8_t distance7=60;//EF
 uint8_t distance8=30;//FG
 uint8_t distance9=35;//8I
 
-//药物�?????????????????????�?????????????????????
+//药物�???????????????????????�???????????????????????
 uint8_t Medicine_Flag=0;//药物装下1,药物卸下2
 
-//车索�?????????????????????(1 / 2)
+//车索�???????????????????????(1 / 2)
 uint8_t car_index=1;
 
-//车返回标�?????????????????????
+//车返回标�???????????????????????
 uint8_t ReturnFlag=0;
 
 uint16_t freq=10;//无线通信频率
@@ -159,8 +160,8 @@ uint32_t TurnPeriod=0;
 uint32_t WaitPeriod = 10;
 uint8_t TurnStopFlag=0;
 uint8_t StopFlag = 0;
-uint8_t WaitFlag = 0; // 给与�??定数字识别时�??
-uint8_t OpenFlag = 0; // 给与�??定开环往前走
+uint8_t WaitFlag = 0; // 给与�????定数字识别时�????
+uint8_t OpenFlag = 0; // 给与�????定开环往前走
 uint8_t OpenDis = 10;
 uint8_t LoopStart = 0; // 是否是一次新的开环走+旋转
 //uint32_t TurnNinetyPeriod=650;
@@ -173,16 +174,16 @@ float TargetDistance=0;
 uint8_t StraightStopFlag=0;
 
 char NrfTxBuf[32] = {0}; //无线发�?�数据缓冲区
-char NrfRxBuf[32]={0};                 //无线接收数据缓冲�??????????????????
+char NrfRxBuf[32]={0};                 //无线接收数据缓冲�????????????????????
 uint8_t NrfRxFlag=0; //无线接收中断
 uint8_t ReceiveHelloFlag=0;
 
 uint8_t PiRxStrBuf[128];
 uint8_t PiRxCharIdx=0;//接收字符位置索引
-uint8_t PiRxChar;//接收的字�?????????????????????
-uint8_t PiRxStrFlag;//接收字符串标�?????????????????????
+uint8_t PiRxChar;//接收的字�???????????????????????
+uint8_t PiRxStrFlag;//接收字符串标�???????????????????????
 
-//串口�??????????
+//串口�????????????
 uint8_t Velocity_Plot_Indicate=0;
 
 float actual_Delay=0;
@@ -192,6 +193,20 @@ int8_t action_index = -1;
 uint8_t lock=0;
 
 
+/*以下是激光打靶小车新增变�??*/
+//CCD读取�??128像素数组
+uint16_t ADV[128]={0};//CCD采集像素数组
+uint16_t filtered_ADV[128];//滤波后的像素数组
+int16_t DxMax=0;
+int16_t DxMin=0;//�??�??/�??小像素差分�??
+int16_t dX[188];//像素差分数组
+uint16_t MaxIdx=0;//�??大像素跳变点索引
+uint16_t MinIdx=0;//�??小像素跳变点索引
+uint16_t TargetIdx;//像素跳变点索引，目标中心点索�??
+uint8_t median_filter=1;
+uint8_t CCD_UpdateFlag=0; //CCD更新标志
+uint8_t CCD_Angle_Period=100;//CCD调控周期（20ms）
+uint8_t CCD_Angle_Cnt=0;//CCD调控计时器
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -207,6 +222,10 @@ void openLoopForward(uint8_t forwardVelocity, uint32_t forwardDistance);
 void Enable_CrossDetected(void);
 void Enable_BlockDetected(void);
 void Require_Numbers(uint8_t num);
+void Dly(void);
+void CCD_Read(void) ;
+void Linear_CCD_Flush(void);
+void CCD_DataProcess(void);
 
 /* USER CODE END PFP */
 
@@ -214,8 +233,8 @@ void Require_Numbers(uint8_t num);
 /* USER CODE BEGIN 0 */
 // 无线模块接收回调函数
 void myRxCallback(char* data) {
-	strncpy(NrfRxBuf, data, 32);//拷贝字符串到接收数据缓冲�??????????????????
-    NrfRxFlag=1;//接受到字符串标志�??????????????????1
+	strncpy(NrfRxBuf, data, 32);//拷贝字符串到接收数据缓冲�????????????????????
+    NrfRxFlag=1;//接受到字符串标志�????????????????????1
 }
 /* USER CODE END 0 */
 
@@ -298,11 +317,51 @@ Error_Handler();
   MX_UART4_Init();
   MX_UART8_Init();
   /* USER CODE BEGIN 2 */
-  DC_Init();//编码电机初始�??????????
-  Velocity_PID_Init();//速度pid初始�??????????
+  DC_Init();//编码电机初始�????????????
+  Velocity_PID_Init();//速度pid初始�????????????
   Angle_PID_Init();
-  DWT_Init();//延时单元初始�??????????
+  DWT_Init();//延时单元初始�????????????
 
+  //串口屏串口初始化
+//  void MX_USART2_UART_Init()  //Touch Pannel interface init
+//  {
+//
+//    huart2.Instance             = USART2;
+//    huart2.Init.BaudRate        = 9600;
+//    huart2.Init.WordLength      = UART_WORDLENGTH_8B;
+//    huart2.Init.StopBits        = UART_STOPBITS_1;
+//    huart2.Init.Parity          = UART_PARITY_NONE;
+//    huart2.Init.HwFlowCtl       = UART_HWCONTROL_NONE;
+//    huart2.Init.Mode            = UART_MODE_TX_RX;
+//    huart2.Init.ClockPrescaler  = UART_PRESCALER_DIV1;
+//    huart2.Init.OneBitSampling  = UART_ONE_BIT_SAMPLE_DISABLE;
+//    huart2.Init.OverSampling    = UART_OVERSAMPLING_16;
+//    if(HAL_UART_Init(&huart2) != HAL_OK)
+//    {
+//      Error_Handler();
+//    }
+//    /* Set the RXFIFO threshold */
+//    HAL_UARTEx_SetRxFifoThreshold(&huart2, UART_RXFIFO_THRESHOLD_1_4);
+//    /* Enable the FIFO mode */
+//    HAL_UARTEx_EnableFifoMode(&huart2);
+//    /* Output message to Touch Pannel on hyperterminal */
+//  /*
+//    //cls BLACK
+//    HAL_UART_Transmit(&huart2,StartSTR,3,10);
+//    HAL_UART_Transmit(&huart2, (uint8_t*)&HeaderTxBuffer1, countof(HeaderTxBuffer1)-1, HAL_TIMEOUT_VALUE);
+//    HAL_UART_Transmit(&huart2,EndSTR,3,10);
+//
+//    //transfer to page 2
+//    HAL_UART_Transmit(&huart2,StartSTR,3,10);
+//    HAL_UART_Transmit(&huart2, (uint8_t*)&HeaderTxBuffer2, countof(HeaderTxBuffer2)-1, HAL_TIMEOUT_VALUE);
+//    HAL_UART_Transmit(&huart2,EndSTR,3,10);
+//  */
+//    /* Enable the UART RX FIFO threshold interrupt */
+//    __HAL_UART_ENABLE_IT(&huart2, UART_IT_RXFT);
+//    /* Put UART peripheral in reception process */
+//    //HAL_UART_Receive_IT(&huart2, (uint8_t*)&RxBuffer, 1);
+//
+//  }
 
 
 
@@ -313,7 +372,7 @@ Error_Handler();
   HAL_UART_Transmit(&huart4,(const uint8_t *)"hi1\r\n",strlen("hi1\r\n"),HAL_MAX_DELAY);
   uint8_t lock=0;
   uint8_t Movelock=0;
-  TestStage='1';
+  //TestStage='s';//送药小车
 
 
   //使能串口2中断
@@ -332,7 +391,7 @@ Error_Handler();
 
     /* USER CODE BEGIN 3 */
 
-	/*地图(数字1~8代表病房位置�?????????????????????0是药房，字母代表交叉处，（字母）表示数字识别�?????????????????????)
+	/*地图(数字1~8代表病房位置�???????????????????????0是药房，字母代表交叉处，（字母）表示数字识别�???????????????????????)
 	 *   l                         r
 	 *   |            C            |
 	 * D |   - - - - - - - - - -   | E
@@ -354,7 +413,8 @@ Error_Handler();
 	 *
 	 * */
 		//基础部分运动逻辑状�?�转换机
-	  if(TestStage=='1')
+	  /*
+	  if(TestStage=='s')//送药小车
 	  {
 		switch(Pos)
 		{
@@ -366,11 +426,11 @@ Error_Handler();
 		  case '0':
 			  if(Dir=='n')//药房出发
 			  {
-				  if(medicine_detected==1)//�??测到药物被装�??
+				  if(medicine_detected==1)//�????测到药物被装�????
 				  {
 					  DC_Start(0);
-					  medicine_detected=0;//清除药物�??测标�??
-					  Enable_CrossDetected();//等待十字路口�??�??
+					  medicine_detected=0;//清除药物�????测标�????
+					  Enable_CrossDetected();//等待十字路口�????�????
 				  }
 				  if(cross_detected==1)
 				  {
@@ -407,7 +467,7 @@ Error_Handler();
 			    	 HAL_UART_Transmit(&huart4,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
 			    	 openLoopTurning(1,180);
 			    	 toWard = 0;
-			    	 medicine_detected=0;//清除药物�??测标�??
+			    	 medicine_detected=0;//清除药物�????测标�????
 			    	 Dir = 'e';
 			     }
 			  }
@@ -433,7 +493,7 @@ Error_Handler();
 			     {
 			    	 HAL_UART_Transmit(&huart4,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
 			    	 openLoopTurning(1,180);
-			    	 medicine_detected=0;//清除药物�??测标�??
+			    	 medicine_detected=0;//清除药物�????测标�????
 			    	 toWard = 0;
 			    	 Dir = 'w';
 			     }
@@ -462,10 +522,10 @@ Error_Handler();
 						  openLoopForward(regularVelocity,toCrossTime);
 						  DC_Start(0);
 						  lock=1;
-						  Enable_CrossDetected();//等待十字路口�??�??
+						  Enable_CrossDetected();//等待十字路口�????�????
 					  }
 
-					  if(cross_detected)//�??测到十字路口
+					  if(cross_detected)//�????测到十字路口
 					  {
 						  actions[++action_index] = 0;
 						  Pos = 'B';
@@ -575,7 +635,7 @@ Error_Handler();
 				     {
 				    	 HAL_UART_Transmit(&huart4,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
 				    	 openLoopTurning(1,180);
-				    	 medicine_detected=0;//清除药物�??测标�??
+				    	 medicine_detected=0;//清除药物�????测标�????
 				    	 toWard = 0;
 				    	 Dir = 'e';
 				     }
@@ -603,7 +663,7 @@ Error_Handler();
 				     {
 				    	 HAL_UART_Transmit(&huart4,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
 				    	 openLoopTurning(1,180);
-				    	 medicine_detected=0;//清除药物�??测标�??
+				    	 medicine_detected=0;//清除药物�????测标�????
 				    	 toWard = 0;
 				    	 Dir = 'w';
 				     }
@@ -948,7 +1008,7 @@ Error_Handler();
 				     {
 				    	 HAL_UART_Transmit(&huart4,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
 				    	 openLoopTurning(1,180);
-				    	 medicine_detected=0;//清除药物�??测标�??
+				    	 medicine_detected=0;//清除药物�????测标�????
 				    	 toWard = 0;
 				    	 Dir = 'n';
 				     }
@@ -977,7 +1037,7 @@ Error_Handler();
 				     {
 				    	 HAL_UART_Transmit(&huart4,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
 				    	 openLoopTurning(1,180);
-				    	 medicine_detected=0;//清除药物�??测标�??
+				    	 medicine_detected=0;//清除药物�????测标�????
 				    	 toWard = 0;
 				    	 Dir = 's';
 				     }
@@ -1106,7 +1166,7 @@ Error_Handler();
 				     {
 				    	 HAL_UART_Transmit(&huart4,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
 				    	 openLoopTurning(1,180);
-				    	 medicine_detected=0;//清除药物�??测标�??
+				    	 medicine_detected=0;//清除药物�????测标�????
 				    	 toWard = 0;
 				    	 Dir = 'n';
 				     }
@@ -1135,7 +1195,7 @@ Error_Handler();
 				     {
 				    	 HAL_UART_Transmit(&huart4,(const uint8_t *)"Red Light Off",strlen("Red Light Off"),HAL_MAX_DELAY);//熄灭红灯
 				    	 openLoopTurning(1,180);
-				    	 medicine_detected=0;//清除药物�??测标�??
+				    	 medicine_detected=0;//清除药物�????测标�????
 				    	 toWard = 0;
 				    	 Dir = 's';
 				     }
@@ -1173,7 +1233,7 @@ Error_Handler();
 
 
 
-   /*串口屏命令响�??*/
+   /*串口屏命令响�????*/
    	if( Touch_pannel_receive_completed ==1)
    	{
    		switch(Touch_pannel_Uart2_RxBuffer[1])
@@ -1181,33 +1241,33 @@ Error_Handler();
    	      //模式切换:单车模式
    		   case 0x01:
 //   			  Mode=1;
-   			  //发�?�命令给树莓派，准备识别�?????????????????????个数�?????????????????????
+   			  //发�?�命令给树莓派，准备识别�???????????????????????个数�???????????????????????
    			  HAL_UART_Transmit(&huart4,"Recognize One Number",strlen("Recognize One Number"),HAL_MAX_DELAY);
-   			  HAL_UART_Transmit(&huart4,"Green Light Off",strlen("Green Light Off"),HAL_MAX_DELAY);//熄灭上一次任务完成后点亮的绿�?????????????????????
+   			  HAL_UART_Transmit(&huart4,"Green Light Off",strlen("Green Light Off"),HAL_MAX_DELAY);//熄灭上一次任务完成后点亮的绿�???????????????????????
    			  Touch_pannel_Uart2_RxBuffer[1] = 0x0;
    			  break;
-   	      //模式切换:双车模式1（拓展题1�?????????????????????
+   	      //模式切换:双车模式1（拓展题1�???????????????????????
    		   case 0x02:
 //   			  Mode=2;
    			  Touch_pannel_Uart2_RxBuffer[1] = 0x0;
    			  break;
-   	     //模式切换:双车模式2（拓展题2�?????????????????????
+   	     //模式切换:双车模式2（拓展题2�???????????????????????
 			   case 0x03:
 //				  Mode=3;
 				  Touch_pannel_Uart2_RxBuffer[1] = 0x0;
 				  break;
-		     //车前进（有�?�度pid�??????????
+		     //车前进（有�?�度pid�????????????
 			   case 0x11:
 				  DC_Forward(0,1);
 				  Touch_pannel_Uart2_RxBuffer[1] = 0x0;
 
 				  break;
-			 //车后�??????????（有速度pid�??????????
+			 //车后�????????????（有速度pid�????????????
 			   case 0x12:
 				   DC_Backward(0,1);
 				   Touch_pannel_Uart2_RxBuffer[1] = 0x0;
 				  break;
-			//车停�??????????
+			//车停�????????????
 			   case 0x13:
 				   DC_Stop();
 				   Touch_pannel_Uart2_RxBuffer[1] = 0x0;
@@ -1223,27 +1283,27 @@ Error_Handler();
 				   Velocity_Plot_Indicate=1;
 			       Touch_pannel_Uart2_RxBuffer[1] = 0x0;
 			       break;
-		   //�??????????出�?�度波形界面
+		   //�????????????出�?�度波形界面
 			   case 0x16:
 				   Velocity_Plot_Indicate=0;
 				   Touch_pannel_Uart2_RxBuffer[1] = 0x0;
 				   break;
-			//车左�???
+			//车左�?????
 			   case 0x17:
 				   openLoopTurning(-1, 90);
 				   Touch_pannel_Uart2_RxBuffer[1] = 0x0;
 				   break;
-			//车右�???
+			//车右�?????
 			   case 0x18:
 				   openLoopTurning(1, 90);
 				   Touch_pannel_Uart2_RxBuffer[1] = 0x0;
 				   break;
-			//车掉�???
+			//车掉�?????
 			   case 0x19:
 				   openLoopTurning(1, 180);
 				   Touch_pannel_Uart2_RxBuffer[1] = 0x0;
 				   break;
-				//�??始执行任务时，向单片机发送识别一个数字的请求
+				//�????始执行任务时，向单片机发送识别一个数字的请求
 			   case 0x20:
 				   PiRxStrBuf[0]='\0';
 				   medicine_detected = 0;
@@ -1268,23 +1328,24 @@ Error_Handler();
    	}
 
 	   //与k230通信
+   	/*
 	   	if(PiRxStrFlag==1)
 	   	{
 	   		int Num1=0,Num2=0,Num3=0,Num4=0;
 	   		uint16_t TempCx=0;
-            //识别到一个数�??
+            //识别到一个数�????
 			if(sscanf((const char *)&PiRxStrBuf,"detect one number: %d",&Num1)==1)
 			{
 				target='0'+Num1;//记录当前要去的病房号
 			}
-			//识别到两个数�??
+			//识别到两个数�????
 			else if(sscanf((const char *)&PiRxStrBuf,"detect two numbers: %d %d",&Num1,&Num2)==2)
 			{
 				digitDetected[0]='0'+Num1;
 				digitDetected[1]='0'+Num2;
 				digitDetected[2]='\0';
 			}
-            //识别到四个数�??
+            //识别到四个数�????
 			else if(sscanf((const char *)&PiRxStrBuf,"detect four numbers: %d %d %d %d",&Num1,&Num2,&Num3,&Num4)==4)
 			{
 				digitDetected[0]='0'+Num1;
@@ -1297,17 +1358,17 @@ Error_Handler();
 			{
 			  HAL_UART_Transmit(&huart4,(const uint8_t *)"Hello From STM32\r\n",strlen("Hello From STM32\r\n"),HAL_MAX_DELAY);
 			}
-			//识别到交叉路�??
+			//识别到交叉路�????
 			else if(strcmp(&PiRxStrBuf,"detect cross")==0)//车辆停转
 			{
 			   cross_detected=1;
 			}
-			//识别到交叉路�??
+			//识别到交叉路�????
 			else if(strcmp(&PiRxStrBuf,"detect block")==0)//车辆停转
 			{
 			   block_detected=1;
 			}
-			//识别到巡线信�??
+			//识别到巡线信�????
 			else
 			{
 				if(sscanf((const char *)&PiRxStrBuf,"cx:%d",&TempCx)==1)
@@ -1323,8 +1384,15 @@ Error_Handler();
 
 			PiRxStrFlag=0;
 		}
-
-
+*/
+	if(CCD_UpdateFlag)
+	{
+	   Angle_PID_SetCurX(TargetIdx);
+	   Angle_PID_Update();
+	}
+	else{
+		Set_TargetVelocity(regularVelocity,regularVelocity);
+	}
 
 	if(Velocity_Plot_Indicate==1)
    {
@@ -1336,7 +1404,7 @@ Error_Handler();
     if(MoveFlag==1 && Velocity_PID_UpdateFlag==1)
     {
     	Velocity_PID_UpdateFlag=0;
-    	GetVelocity();//更新左右轮转�??????????
+    	GetVelocity();//更新左右轮转�????????????
        Velocity_PID_Update();//速度PID控制
     }
 
@@ -1356,22 +1424,13 @@ Error_Handler();
 		//StraightStopFlag=0;
 	 }
 */
-
+	 //CCD_Read();//更新CCD数据用于巡线
+	 //CCD_DataProcess();//CCD计算黑线中心
 	//snprintf(VelocityStr,sizeof(VelocityStr),"%.2f,%.2f\r\n",v_BR,BR_Velocity_PID.TargetVelocity);//串口发�?�，绘制当前左轮速度和目标�?�度波形
 	//HAL_UART_Transmit(&hlpuart1,VelocityStr,strlen(VelocityStr),HAL_MAX_DELAY);
   }
 
-  //速度很小时关停电�???
-  /*if(fabs(v_BL)<0.01 && fabs(v_BR)<0.01 && VelocityStopFlag==1)
-  {
-	   MoveFlag=0;
-	   VelocityStopFlag=0;
-	   Velocity_PID_Reset();
-	   HAL_TIM_PWM_Stop(&htim2,TIM_CHANNEL_1);
-	   HAL_TIM_PWM_Stop(&htim2,TIM_CHANNEL_3);
-	   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
-	   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-  }*/
+
 
 
 
@@ -1445,16 +1504,17 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   if(htim->Instance == TIM5)
   {
 
-      //速度pid调控周期�???????????????????????20ms
+      //速度pid调控周期�?????????????????????????20ms
       if(MoveFlag==1)
       {
     	  Cnt_1ms++;
+    	  CCD_Angle_Cnt++;
 		  if(Cnt_1ms%T_velocity==0)
 		  {
-			  //GetVelocity();//更新左右轮转�??????????
+			  //GetVelocity();//更新左右轮转�????????????
               //Velocity_Update();//速度PID控制
 			  Velocity_PID_UpdateFlag=1;
-			  /*占空�??????????-电机转�?�关系测�??????????
+			  /*占空�????????????-电机转�?�关系测�????????????
 			  v_cnt++;
 			  GetVelocity();
 			  if(v_cnt>250 && v_cnt<750)
@@ -1465,6 +1525,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			  */
 			  //Location_PID.CurLocation=Totaldistance;
               //Velocity_PID_Control();
+		  }
+		  if(CCD_Angle_Cnt%CCD_Angle_Period==0)
+		  {
+			  CCD_Angle_Cnt=0;
+		      CCD_Read();//更新CCD数据用于巡线
+		      CCD_DataProcess();//CCD计算黑线中心
+			  CCD_UpdateFlag=1;
+
 		  }
 
 		  //位置pid调控周期100ms
@@ -1492,7 +1560,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 //串口接收中断
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	//串口�?????????????????
+	//串口�???????????????????
 	if ((huart->Instance == USART2)&&(HAL_UART_Receive_IT(huart, &Touch_pannel_receive, 1) == HAL_OK))
 	{
 	      if((char)Touch_pannel_receive == 0x5A)
@@ -1515,7 +1583,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	          }
 	        }
 	}
-	//和stm32通信（与树莓派间接�?�信�?????????????????
+	//和stm32通信（与树莓派间接�?�信�???????????????????
 	if(huart==&huart4)
 	{
 		if(PiRxChar=='\r')
@@ -1558,12 +1626,12 @@ void Velocity_Plot(void)
     uint8_t tmp0,tmp1,tmp2,tmp3,tmp4,tmp5,tmp6;
 	uint16_t tempSpeed= BL_Velocity_PID.CurVelocity;
 	tmp0 = tempSpeed%1000;
-	tmp1 = tempSpeed/1000+0x30;  //千位�??????????
+	tmp1 = tempSpeed/1000+0x30;  //千位�????????????
 	tmp2 = tmp0%100;
-	tmp3 = tmp0/100+0x30;  //百位�??????????
+	tmp3 = tmp0/100+0x30;  //百位�????????????
 	tmp4 = tmp2%10;
-	tmp5 = tmp2/10+0x30;  //十位�??????????
-	tmp6 = tmp4+0x30;  //个位�??????????
+	tmp5 = tmp2/10+0x30;  //十位�????????????
+	tmp6 = tmp4+0x30;  //个位�????????????
 
 	speed[0] = tmp3;
 	speed[1] = tmp5;
@@ -1578,7 +1646,7 @@ void Velocity_Plot(void)
 
 uint8_t OpenForward()
 {
-	static int complete = 0; // 返回是否完成�?? 以构成动作链
+	static int complete = 0; // 返回是否完成�???? 以构成动作链
 	static int Flag = 0; // 单次执行
 
 	if (complete) return 1;
@@ -1606,7 +1674,7 @@ uint8_t OpenForward()
 
 uint8_t OpenTurn(uint8_t dir, uint8_t angle)
 {
-	static int complete = 0; // 返回是否完成�?? 以构成动作链
+	static int complete = 0; // 返回是否完成�???? 以构成动作链
 	static int Flag = 0; // 单次执行
 
 	if (complete) return 1;
@@ -1669,7 +1737,7 @@ void openLoopTurning(int8_t clockwise,uint16_t angle)
 	    if(MoveFlag==1 && Velocity_PID_UpdateFlag==1)
 	    {
 	    	Velocity_PID_UpdateFlag=0;
-	    	GetVelocity();//更新左右轮转�??????????
+	    	GetVelocity();//更新左右轮转�????????????
 	        Velocity_PID_Update();//速度PID控制
 	    }
 	}
@@ -1691,7 +1759,7 @@ void openLoopForward(uint8_t forwardVelocity, uint32_t forwardDistance)
 	   	if(PiRxStrFlag==1)
 	   	{
             uint16_t TempCx=0;
-			//识别到巡线信�??
+			//识别到巡线信�????
             if(sscanf((const char *)&PiRxStrBuf,"cx:%d",&TempCx)==1)
 			{
 			   Angle_PID_SetCurX(TempCx);
@@ -1706,7 +1774,7 @@ void openLoopForward(uint8_t forwardVelocity, uint32_t forwardDistance)
 	    if(MoveFlag==1 && Velocity_PID_UpdateFlag==1)
 	    {
 	    	Velocity_PID_UpdateFlag=0;
-	    	GetVelocity();//更新左右轮转�??????????
+	    	GetVelocity();//更新左右轮转�????????????
 	       Velocity_PID_Update();//速度PID控制
 	    }
 
@@ -1725,24 +1793,191 @@ void openLoopForward(uint8_t forwardVelocity, uint32_t forwardDistance)
 
 void Enable_CrossDetected(void)
 {
-	  HAL_UART_Transmit(&huart4,(const uint8_t *)"enable cross detected\r\n",strlen("enable cross detected\r\n"),HAL_MAX_DELAY);//等待交叉路口�??�??
+	  HAL_UART_Transmit(&huart4,(const uint8_t *)"enable cross detected\r\n",strlen("enable cross detected\r\n"),HAL_MAX_DELAY);//等待交叉路口�????�????
 }
 
 void Enable_BlockDetected(void)
 {
-	  HAL_UART_Transmit(&huart4,(const uint8_t *)"enable block detected\r\n",strlen("enable block detected\r\n"),HAL_MAX_DELAY);//等待交叉路口�??�??
+	  HAL_UART_Transmit(&huart4,(const uint8_t *)"enable block detected\r\n",strlen("enable block detected\r\n"),HAL_MAX_DELAY);//等待交叉路口�????�????
 }
 
 void Require_Numbers(uint8_t num)
 {
   if(num==1)
-	  HAL_UART_Transmit(&huart4,(const uint8_t *)"detect one number\r\n",strlen("detect one number\r\n"),HAL_MAX_DELAY);//识别�??个数�??
+	  HAL_UART_Transmit(&huart4,(const uint8_t *)"detect one number\r\n",strlen("detect one number\r\n"),HAL_MAX_DELAY);//识别�????个数�????
   else if(num==2)
 	  HAL_UART_Transmit(&huart4,(const uint8_t *)"detect two numbers\r\n",strlen("detect two numbers\r\n"),HAL_MAX_DELAY);//识别两个数字
   else if(num==4)
 	  HAL_UART_Transmit(&huart4,(const uint8_t *)"detect four numbers\r\n",strlen("detect four numbers\r\n"),HAL_MAX_DELAY);//识别四个数字
 }
 
+void CCD_Read(void)
+{
+  uint8_t i=0,tslp=0,j=0;
+  Linear_CCD_Flush();           // flush previously integrated frame before capturing new frame
+  // wait for TSL1401 to integrate new frame, exposure time control by delay
+    for(j=0;j<10;j++)
+    {
+       Dly_us();
+    }
+
+  //TSL_SI=1;
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_5, GPIO_PIN_SET);
+  Dly_us();
+  //TSL_CLK=1;
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, GPIO_PIN_SET);
+  Dly_us();
+  //TSL_SI=0;
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_5, GPIO_PIN_RESET);
+  Dly_us();
+  //TSL_CLK=0;
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, GPIO_PIN_RESET);
+  Dly_us();
+
+  for(i=0;i<128;i++)					//128 DATA/LINE
+  {
+      /* ADC conversion completed */
+      /*##-5- Get the converted value of regular channel  ########################*/
+      //uhADCxConvertedValue = HAL_ADC_GetValue(&hadc1);
+      //Dly_us();
+    ADV[tslp]= (HAL_ADC_GetValue(&hadc1))&(0xffff);
+      ++tslp;
+    //ADV[tslp]=(((aADCDualConvertedValues[0])&(0xFFF))+((aADCDualConvertedValues[1])&(0xFFF))+((aADCDualConvertedValues[2])&(0xFFF))+((aADCDualConvertedValues[3])&(0xFFF))+((aADCDualConvertedValues[4])&(0xFFF)))/5;
+
+    //TSL_CLK=1;
+    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, GPIO_PIN_SET);
+    Dly_us();
+    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, GPIO_PIN_RESET);
+    Dly_us();
+    Dly_us();
+  }
+    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, GPIO_PIN_SET);    //129th pulse to terminate output of 128th pixel
+    Dly_us();
+    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, GPIO_PIN_RESET);
+}
+
+// simply generate SI & CLK pulses to flush the previously integrated frame
+// while integrating new frame to be read out
+void Linear_CCD_Flush(void)
+{
+    uint8_t index=0;
+    //TSL_SI=1;
+    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_5, GPIO_PIN_SET);
+    Dly_us();
+    //TSL_CLK=1;
+    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, GPIO_PIN_SET);  	// 1st Pulse
+    Dly_us();
+    //TSL_SI=0;
+    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_5, GPIO_PIN_RESET);
+    Dly_us();
+    //TSL_CLK=0;
+    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, GPIO_PIN_RESET);
+    Dly_us();
+
+    for(index=0; index<128; index++)
+    {
+          //TSL_CLK=1;
+        HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, GPIO_PIN_SET);
+        Dly_us();
+        Dly_us();
+            //TSL_CLK=0;
+        HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, GPIO_PIN_RESET);
+        Dly_us();
+        Dly_us();
+    }
+}
+
+void Dly_us(void)
+{
+  uint8_t j=0;
+  for(j=0;j<64;j++)
+    {Dly();}
+}
+
+void Dly(void)
+{
+   uint32_t ii;
+   for(ii=0;ii<100;ii++);
+}
+
+
+void CCD_DataProcess(void)
+{
+   uint8_t j;
+   DxMax=0;
+   DxMin=0;
+
+   // --- 新增中值滤波处理 ---
+   if(median_filter==1)
+   {
+    // 对每个点计算左、中、右三个值的中位数并保存到 filtered_ADV
+    for (int j = 0; j < 128; j++)
+    {
+        int left_val, current_val, right_val;
+
+        // 处理边界条件
+        left_val = (j == 0) ? ADV[j] : ADV[j - 1];  // 左边值（j=0时取当前值）
+        current_val = ADV[j];                       // 当前值
+        right_val = (j == 127) ? ADV[j] : ADV[j + 1]; // 右边值（j=127时取当前值）
+
+        // 计算三个值的中位数
+        int a = left_val;
+        int b = current_val;
+        int c = right_val;
+
+        // 手动计算最小值和最大值
+        int min_val = a;
+        if (b < min_val) min_val = b;
+        if (c < min_val) min_val = c;
+
+        int max_val = a;
+        if (b > max_val) max_val = b;
+        if (c > max_val) max_val = c;
+
+        // 中位数 = 总和 - 最小值 - 最大值
+        filtered_ADV[j] = a + b + c - min_val - max_val;
+    }
+
+
+    for (j = 0; j < 125; j++)
+    {
+        dX[j] = filtered_ADV[j] - filtered_ADV[j + 3]; // 使用过滤后的数据，j+3 最大为 127（当 j=124）
+
+        if (DxMin > dX[j])
+        {
+            DxMin = dX[j];
+            MinIdx = j;
+        }
+        if (DxMax < dX[j])
+        {
+            DxMax = dX[j];
+            MaxIdx = j;
+        }
+    }
+   }
+   // --- 中值滤波处理结束 ---
+   else{
+        for(j=0; j<125; j++)
+      {
+          dX[j] = ADV[j] - ADV[j+3];
+          if (DxMin > dX[j])
+         {
+            DxMin = dX[j];
+            MinIdx = j;
+          }
+          if (DxMax < dX[j])
+         {
+            DxMax = dX[j];
+            MaxIdx = j;
+         }
+      }
+
+   }
+
+   if (MaxIdx < MinIdx&&MinIdx-MaxIdx>5)
+     TargetIdx = (MaxIdx+MinIdx)>>1;
+
+}
 
 /* USER CODE END 4 */
 

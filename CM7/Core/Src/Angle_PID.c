@@ -10,6 +10,8 @@ Angle_PID_Struct Angle_PID;//转向pid结构体
 extern uint16_t regularVelocity;
 void Angle_PID_Init(void)
 {
+   /*
+    送药小车
    Angle_PID.Kp=0.03;
    Angle_PID.Ki=0.0;
    Angle_PID.Kd=0.0;
@@ -27,6 +29,27 @@ void Angle_PID_Init(void)
    Angle_PID.OutputThreshH=5;
    Angle_PID.OutputThreshL = 0;
    Angle_PID.Reset=0;
+   */
+   //巡线小车
+   Angle_PID.Kp=0.1;
+   Angle_PID.Ki=0.0;
+   Angle_PID.Kd=0.0;
+   Angle_PID.P = 0;
+   Angle_PID.I = 0;
+   Angle_PID.D = 0;
+   Angle_PID.Error0=0;
+   Angle_PID.Error1=0;
+   Angle_PID.ErrorThresh = 0;
+   Angle_PID.ErrorInt=0;
+   Angle_PID.IThresh=0;
+   Angle_PID.CurX = 0;
+   Angle_PID.TargetX = 63;
+   Angle_PID.deltaVelocity = 0;
+   Angle_PID.OutputThreshH=5;
+   Angle_PID.OutputThreshL = 0;
+   Angle_PID.Reset=0;
+
+
 }
 
 /* Private PID functions ---------------------------------------------------------*/

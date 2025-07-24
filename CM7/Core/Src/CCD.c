@@ -1,91 +1,52 @@
-/* USER CODE BEGIN Header */
-/**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2025 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
-/* USER CODE END Header */
-/* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "adc.h"
-#include "usart.h"
-#include "spi.h"
-#include "tim.h"
-#include "gpio.h"
 
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
+#include "CCD.h"
 
-/* USER CODE END Includes */
 
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
+/*
+#define CCD_SI_H HAL_GPIO_WritePin(CCD_SI_GPIO_Port, CCD_SI_Pin, GPIO_PIN_SET);
+#define CCD_SI_L HAL_GPIO_WritePin(CCD_SI_GPIO_Port, CCD_SI_Pin, GPIO_PIN_RESET);
+#define CCD_CLK_H HAL_GPIO_WritePin(CCD_CLK_GPIO_Port, CCD_CLK_Pin, GPIO_PIN_SET);
+#define CCD_CLK_L HAL_GPIO_WritePin(CCD_CLK_GPIO_Port, CCD_CLK_Pin, GPIO_PIN_RESET);
 
-/* USER CODE END PTD */
+//微秒级延时函数
+void Dly_us(void)
+{
+  uint8_t j=0;
+  for(j=0;j<64;j++)
+    {Dly();}
+}
 
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
+//延时
+void Dly(void)
+{
+   uint32_t ii;
+   for(ii=0;ii<100;ii++);
+}
 
-#ifndef HSEM_ID_0
-#define HSEM_ID_0 (0U) /* HW semaphore 0*/
-#endif
 
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
-
-/* Private variables ---------------------------------------------------------*/
-
-/* USER CODE BEGIN PV */
-
-/* USER CODE END PV */
-
-/* Private function prototypes -----------------------------------------------*/
-void SystemClock_Config(void);
-static void MPU_Config(void);
-/* USER CODE BEGIN PFP */
-
-/* USER CODE END PFP */
-
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
-uint16_t ADV[128]={0};
-
+//读取CCD数据
 void CCD_Read(void)
 {
   uint8_t i=0,tslp=0,j=0;
   Linear_CCD_Flush();           // flush previously integrated frame before capturing new frame
   // wait for TSL1401 to integrate new frame, exposure time control by delay
-    for(j=0;j<10;j++)
-    {
-       Dly_us();
-    }
+  for(j=0;j<10;j++)
+  {
+    Dly_us();
+  }
 
   //TSL_SI=1;
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_5, GPIO_PIN_SET);
+  CCD_SI_H;
   Dly_us();
   //TSL_CLK=1;
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, GPIO_PIN_SET);
+  CCD_CLK_H;
   Dly_us();
   //TSL_SI=0;
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_5, GPIO_PIN_RESET);
+  CCD_SI_L;
   Dly_us();
   //TSL_CLK=0;
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, GPIO_PIN_RESET);
+  CCD_CLK_L;
   Dly_us();
 
   for(i=0;i<128;i++)					//128 DATA/LINE
@@ -94,281 +55,129 @@ void CCD_Read(void)
       /*##-5- Get the converted value of regular channel  ########################*/
       //uhADCxConvertedValue = HAL_ADC_GetValue(&hadc1);
       //Dly_us();
-    ADV[tslp]= (HAL_ADC_GetValue(&hadc1))&(0xffff);
-      ++tslp;
+   // ADV[tslp]= (HAL_ADC_GetValue(&hadc1))&(0xffff);
+    //  ++tslp;
     //ADV[tslp]=(((aADCDualConvertedValues[0])&(0xFFF))+((aADCDualConvertedValues[1])&(0xFFF))+((aADCDualConvertedValues[2])&(0xFFF))+((aADCDualConvertedValues[3])&(0xFFF))+((aADCDualConvertedValues[4])&(0xFFF)))/5;
 
     //TSL_CLK=1;
-    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, GPIO_PIN_SET);
-    Dly_us();
-    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, GPIO_PIN_RESET);
-    Dly_us();
-    Dly_us();
-  }
-    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, GPIO_PIN_SET);    //129th pulse to terminate output of 128th pixel
-    Dly_us();
-    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, GPIO_PIN_RESET);
-}
+    //CCD_CLK_H;
+    //Dly_us();
+    //TSL_CLK=0;
+    //CCD_CLK_L;
+    //Dly_us();
+    //Dly_us();
+  //}
+    //CCD_CLK_H;    //129th pulse to terminate output of 128th pixel
+    //Dly_us();
+    //CCD_CLK_L;
+//}
 
 // simply generate SI & CLK pulses to flush the previously integrated frame
 // while integrating new frame to be read out
-void Linear_CCD_Flush(void)
+/*void Linear_CCD_Flush(void)
 {
     uint8_t index=0;
     //TSL_SI=1;
-    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_5, GPIO_PIN_SET);
+    CCD_SI_H;
     Dly_us();
     //TSL_CLK=1;
-    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, GPIO_PIN_SET);  	// 1st Pulse
+    CCD_CLK_H;
     Dly_us();
     //TSL_SI=0;
-    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_5, GPIO_PIN_RESET);
+    CCD_SI_L;
     Dly_us();
     //TSL_CLK=0;
-    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, GPIO_PIN_RESET);
+    CCD_CLK_L;
     Dly_us();
 
     for(index=0; index<128; index++)
     {
-          //TSL_CLK=1;
-        HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, GPIO_PIN_SET);
+        //TSL_CLK=1;
+    	CCD_CLK_H;
         Dly_us();
         Dly_us();
-            //TSL_CLK=0;
-        HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, GPIO_PIN_RESET);
+        //TSL_CLK=0;
+        CCD_CLK_L;
         Dly_us();
         Dly_us();
     }
-}
+}*/
 
-void Dly_us(void)
+//处理CCD数据
+/*void CCD_DataProcess()
 {
-  uint8_t j=0;
-  for(j=0;j<64;j++)
-    {Dly();}
-}
+   uint8_t j;
+   DxMax=0;
+   DxMin=0;
 
-void Dly(void)
-{
-   uint32_t ii;
-   for(ii=0;ii<100;ii++);
-}
+   // --- 新增中值滤波处理 ---
+   if(median_filter==1)
+   {
+    // 对每个点计算左、中、右三个值的中位数并保存到 filtered_ADV
+    for (int j = 0; j < 128; j++)
+    {
+        int left_val, current_val, right_val;
+
+        // 处理边界条件
+        left_val = (j == 0) ? ADV[j] : ADV[j - 1];  // 左边值（j=0时取当前值）
+        current_val = ADV[j];                       // 当前值
+        right_val = (j == 127) ? ADV[j] : ADV[j + 1]; // 右边值（j=127时取当前值）
+
+        // 计算三个值的中位数
+        int a = left_val;
+        int b = current_val;
+        int c = right_val;
+
+        // 手动计算最小值和最大值
+        int min_val = a;
+        if (b < min_val) min_val = b;
+        if (c < min_val) min_val = c;
+
+        int max_val = a;
+        if (b > max_val) max_val = b;
+        if (c > max_val) max_val = c;
+
+        // 中位数 = 总和 - 最小值 - 最大值
+        filtered_ADV[j] = a + b + c - min_val - max_val;
+    }
 
 
-/* USER CODE END 0 */
+    for (j = 0; j < 125; j++)
+    {
+        dX[j] = filtered_ADV[j] - filtered_ADV[j + 3]; // 使用过滤后的数据，j+3 最大为 127（当 j=124）
 
-/**
-  * @brief  The application entry point.
-  * @retval int
-  */
-int main(void)
-{
-  /* USER CODE BEGIN 1 */
+        if (DxMin > dX[j])
+        {
+            DxMin = dX[j];
+            MinIdx = j;
+        }
+        if (DxMax < dX[j])
+        {
+            DxMax = dX[j];
+            MaxIdx = j;
+        }
+    }
+   }
+   // --- 中值滤波处理结束 ---
+   else{
+        for(j=0; j<125; j++)
+      {
+          dX[j] = ADV[j] - ADV[j+3];
+          if (DxMin > dX[j])
+         {
+            DxMin = dX[j];
+            MinIdx = j;
+          }
+          if (DxMax < dX[j])
+         {
+            DxMax = dX[j];
+            MaxIdx = j;
+         }
+      }
 
-  /* USER CODE END 1 */
-/* USER CODE BEGIN Boot_Mode_Sequence_0 */
-  int32_t timeout;
-/* USER CODE END Boot_Mode_Sequence_0 */
+   }
 
-  /* MPU Configuration--------------------------------------------------------*/
-  MPU_Config();
-/* Enable the CPU Cache */
+   if (MaxIdx < MinIdx&&MinIdx-MaxIdx>5)
+     TargetIdx = (MaxIdx+MinIdx)>>1;
 
-  /* Enable I-Cache---------------------------------------------------------*/
-  SCB_EnableICache();
-
-  /* Enable D-Cache---------------------------------------------------------*/
-  SCB_EnableDCache();
-
-/* USER CODE BEGIN Boot_Mode_Sequence_1 */
-  /* Wait until CPU2 boots and enters in stop mode or timeout*/
-  timeout = 0xFFFF;
-  while((__HAL_RCC_GET_FLAG(RCC_FLAG_D2CKRDY) != RESET) && (timeout-- > 0));
-  if ( timeout < 0 )
-  {
-  Error_Handler();
-  }
-/* USER CODE END Boot_Mode_Sequence_1 */
-  /* MCU Configuration--------------------------------------------------------*/
-
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
-
-  /* USER CODE BEGIN Init */
-
-  /* USER CODE END Init */
-
-  /* Configure the system clock */
-  SystemClock_Config();
-/* USER CODE BEGIN Boot_Mode_Sequence_2 */
-/* When system initialization is finished, Cortex-M7 will release Cortex-M4 by means of
-HSEM notification */
-/*HW semaphore Clock enable*/
-__HAL_RCC_HSEM_CLK_ENABLE();
-/*Take HSEM */
-HAL_HSEM_FastTake(HSEM_ID_0);
-/*Release HSEM in order to notify the CPU2(CM4)*/
-HAL_HSEM_Release(HSEM_ID_0,0);
-/* wait until CPU2 wakes up from stop mode */
-timeout = 0xFFFF;
-while((__HAL_RCC_GET_FLAG(RCC_FLAG_D2CKRDY) == RESET) && (timeout-- > 0));
-if ( timeout < 0 )
-{
-Error_Handler();
-}
-/* USER CODE END Boot_Mode_Sequence_2 */
-
-  /* USER CODE BEGIN SysInit */
-
-  /* USER CODE END SysInit */
-
-  /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_TIM2_Init();
-  MX_TIM1_Init();
-  MX_TIM4_Init();
-  MX_ADC1_Init();
-  MX_TIM8_Init();
-  MX_TIM5_Init();
-  MX_LPUART1_UART_Init();
-  MX_USART2_UART_Init();
-  MX_SPI2_Init();
-  /* USER CODE BEGIN 2 */
-
-  /* USER CODE END 2 */
-
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
-  while (1)
-  {
-	  CCD_Read();
-    /* USER CODE END WHILE */
-
-    /* USER CODE BEGIN 3 */
-  }
-  /* USER CODE END 3 */
-}
-
-/**
-  * @brief System Clock Configuration
-  * @retval None
-  */
-void SystemClock_Config(void)
-{
-  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
-
-  /** Supply configuration update enable
-  */
-  HAL_PWREx_ConfigSupply(PWR_DIRECT_SMPS_SUPPLY);
-
-  /** Configure the main internal regulator output voltage
-  */
-  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
-
-  while(!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {}
-
-  /** Initializes the RCC Oscillators according to the specified parameters
-  * in the RCC_OscInitTypeDef structure.
-  */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
-  RCC_OscInitStruct.HSIState = RCC_HSI_DIV1;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL.PLLM = 4;
-  RCC_OscInitStruct.PLL.PLLN = 9;
-  RCC_OscInitStruct.PLL.PLLP = 2;
-  RCC_OscInitStruct.PLL.PLLQ = 1;
-  RCC_OscInitStruct.PLL.PLLR = 2;
-  RCC_OscInitStruct.PLL.PLLRGE = RCC_PLL1VCIRANGE_3;
-  RCC_OscInitStruct.PLL.PLLVCOSEL = RCC_PLL1VCOWIDE;
-  RCC_OscInitStruct.PLL.PLLFRACN = 0;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Initializes the CPU, AHB and APB buses clocks
-  */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2
-                              |RCC_CLOCKTYPE_D3PCLK1|RCC_CLOCKTYPE_D1PCLK1;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
-  RCC_ClkInitStruct.SYSCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_HCLK_DIV1;
-  RCC_ClkInitStruct.APB3CLKDivider = RCC_APB3_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_APB1_DIV1;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_APB2_DIV1;
-  RCC_ClkInitStruct.APB4CLKDivider = RCC_APB4_DIV1;
-
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
-  {
-    Error_Handler();
-  }
-}
-
-/* USER CODE BEGIN 4 */
-
-/* USER CODE END 4 */
-
-/* MPU Configuration */
-
-void MPU_Config(void)
-{
-  MPU_Region_InitTypeDef MPU_InitStruct = {0};
-
-  /* Disables the MPU */
-  HAL_MPU_Disable();
-
-  /** Initializes and configures the Region and the memory to be protected
-  */
-  MPU_InitStruct.Enable = MPU_REGION_ENABLE;
-  MPU_InitStruct.Number = MPU_REGION_NUMBER0;
-  MPU_InitStruct.BaseAddress = 0x0;
-  MPU_InitStruct.Size = MPU_REGION_SIZE_4GB;
-  MPU_InitStruct.SubRegionDisable = 0x87;
-  MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL0;
-  MPU_InitStruct.AccessPermission = MPU_REGION_NO_ACCESS;
-  MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
-  MPU_InitStruct.IsShareable = MPU_ACCESS_SHAREABLE;
-  MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
-  MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
-
-  HAL_MPU_ConfigRegion(&MPU_InitStruct);
-  /* Enables the MPU */
-  HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
-
-}
-
-/**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
-void Error_Handler(void)
-{
-  /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-  while (1)
-  {
-  }
-  /* USER CODE END Error_Handler_Debug */
-}
-
-#ifdef  USE_FULL_ASSERT
-/**
-  * @brief  Reports the name of the source file and the source line number
-  *         where the assert_param error has occurred.
-  * @param  file: pointer to the source file name
-  * @param  line: assert_param error line source number
-  * @retval None
-  */
-void assert_failed(uint8_t *file, uint32_t line)
-{
-  /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
-     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-  /* USER CODE END 6 */
-}
-#endif /* USE_FULL_ASSERT */
+}*/
